@@ -5,7 +5,7 @@
 - Maciej Mućka (gr 4, @DilithiumNitrate na githubie)
 
 ## Opis
-Wygląda na to, że inna drużyna uprzedziła nas w zrobieniu bota który będzie prowadził rozgrywkę w zwykłego Wordla, zatem nasz będzie prowadził rozgrywki w WorDuela. Czy WordClasha. 
+Wygląda na to, że inna drużyna uprzedziła nas w zrobieniu bota który będzie prowadził rozgrywkę w zwykłego Wordla, zatem nasz będzie prowadził rozgrywki w WorDuela. Czy WordClasha.  
 MBer: Korzystam z Discorda codziennie, więc jest to najbardziej zbliżona rzecz do mojej pasji jaką mogę rozpoznać.
 
 ## Funkcjonalność
@@ -14,8 +14,8 @@ MBer: Korzystam z Discorda codziennie, więc jest to najbardziej zbliżona rzecz
 - Coś bardzo podstawowego typu rzucanie kośćmi o zadanej liczbie ścian
 
 ## Propozycja podziału na części
-- W pierwszej części tworzymy bota który stoi, umie odpowiadać na rzucanie kośćmi i jest Worduel w jednym trybie - losowego słowa bądź podanych sobie nawzajem słów.
-- W drugiej części dostępne są obydwa tryby gry, może hard mode, może coś więcej. 
+- W pierwszej części tworzymy bota który stoi, umie rzucac kośćmi na zawołanie i jest Worduel w jednym trybie - losowego słowa bądź podanych sobie nawzajem słów.
+- W drugiej części dostępne są obydwa tryby gry, może hard mode, może coś więcej. Przechowywanie rekordów, jeśli jest to możliwe. 
 - Obydwie części do ustalenia.
 
 ## Biblioteki
