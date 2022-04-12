@@ -1,27 +1,23 @@
-# Frobnicator
+# Drugi Discord Bot
 
 ## Autorzy
-- Andrzej Głuszak (gr 9, @agluszak na githubie)
-- Linus Torvalds (Uniwersytet Helsiński, @torvalds na githubie)
+- Maciej Bereda (gr 4, @Minnakht na githubie)
+- Maciej Mućka (gr 4, @DilithiumNitrate na githubie)
 
 ## Opis
-Od zawsze chcieliśmy napisać grę komputerową.
-Frobnicator będzie to gra platformowa, w której chodzi o to, żeby...
-
-Z grubsza będziemy wzorować się na [tym tutorialu](https://dev.to/sbelzile/rust-platformer-part-1-bevy-and-ecs-2pci).
+Wygląda na to, że inna drużyna uprzedziła nas w zrobieniu bota który będzie prowadził rozgrywkę w zwykłego Wordla, zatem nasz będzie prowadził rozgrywki w WorDuela. Czy WordClasha. 
+MBer: Korzystam z Discorda codziennie, więc jest to najbardziej zbliżona rzecz do mojej pasji jaką mogę rozpoznać.
 
 ## Funkcjonalność
-- Generowanie map
-- Strzelanie
-- AI dla wrogów (bardziej rozbudowane niż w tutorialu)
-- Możliwość zapisywania i wczytywania stanu gry
-- Punktacja
+- Worduel: Jeden użytkownik może wyzwać drugiego na pojedynek. Mogą podać botowi słowo, do którego przeciwnik ma dążyć bądż celować w jedno losowe słowo. Rozgrywka jest prowadzona na czas - wygrywa strona która zdobędzie lepszy czas, zmodyfikowany premią czasową za ilość zużytych prób.
+- Inne tryby gry, może, kiedyś? Nie chcę obiecywać Semantduel korzystającego z word2vec. 
+- Coś bardzo podstawowego typu rzucanie kośćmi o zadanej liczbie ścian
 
 ## Propozycja podziału na części
-W pierwszej części stworzymy grę opartą na tutorialu (z lepszym AI) i jedną zahardcodowaną planszą.
-
-W drugiej części dodamy do tego losowy generator map, zapisywanie/wczytywanie stanu gry oraz system punktacji.
+- W pierwszej części tworzymy bota który stoi, umie odpowiadać na rzucanie kośćmi i jest Worduel w jednym trybie - losowego słowa bądź podanych sobie nawzajem słów.
+- W drugiej części dostępne są obydwa tryby gry, może hard mode, może coś więcej. 
+- Obydwie części do ustalenia.
 
 ## Biblioteki
-- Bevy
-- może coś do serializacji danych? (czy mógłby Pan coś polecić?)
+- pewnie Serenity
+- lista może się rozszerzyć
