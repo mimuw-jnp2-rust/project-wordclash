@@ -1,5 +1,5 @@
 use crate::{Context, Error};
-use super::wordmatch;
+use crate::dict::wordmatch;
 
 #[poise::command(prefix_command, slash_command, hide_in_help, category = "Dictionary")]
 pub async fn lookup(

@@ -37,5 +37,4 @@ pub async fn load_dictionary() -> HashSet<String> {
     load_dictionary_from(&path).await
 }
 
-pub mod commands;
 pub mod wordmatch;

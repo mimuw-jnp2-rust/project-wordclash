@@ -4,6 +4,7 @@ use std::env;
 use std::collections::HashSet;
 
 mod dict;
+mod commands;
 // use serde::{Deserialize, Serialize};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -50,8 +51,8 @@ async fn main() {
         commands: vec![
             help(),
             register(),
-            dict::commands::lookup(),
-            dict::commands::testmatch(),
+            commands::dict::lookup(),
+            commands::dict::testmatch(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("!".into()),
