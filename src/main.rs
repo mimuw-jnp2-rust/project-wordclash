@@ -1,4 +1,6 @@
 use poise::serenity_prelude as serenity;
+use serenity::UserId;
+use dashmap::DashMap;
 
 use std::env;
 use std::collections::HashSet;
@@ -10,8 +12,15 @@ mod game;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, CtxData, Error>;
+
+pub struct UserData {
+    player: game::PlayerData,
+}
+
 pub struct CtxData {
-    dict: HashSet<String>,
+    dict: HashSet<String>, // immutable
+    mpgames: DashMap<UserId, game::GameMP>,
+    userdata: DashMap<UserId, UserData>,
 }
 
 const TOKEN_VARNAME: &str = "DISCORD_TOKEN";
@@ -68,6 +77,8 @@ async fn main() {
             Box::pin(async move {
                 Ok(CtxData {
                     dict: dict::load_dictionary().await,
+                    mpgames: DashMap::new(),
+                    userdata: DashMap::new(),
                 })
             })
         })
