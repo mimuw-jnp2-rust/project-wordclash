@@ -1,6 +1,7 @@
 use crate::{Context, Error};
 use crate::dict::wordmatch;
 
+/// Look up a word in the dictionary
 #[poise::command(prefix_command, slash_command, hide_in_help, category = "Dictionary")]
 pub async fn lookup(
     ctx: Context<'_>,
@@ -15,6 +16,9 @@ pub async fn lookup(
     Ok(())
 }
 
+/// See how well a word matches another word
+/// 
+/// For testing purposes.
 #[poise::command(prefix_command, slash_command, hide_in_help, category = "Dictionary")]
 pub async fn testmatch(
     ctx: Context<'_>,
@@ -37,8 +41,8 @@ pub async fn testmatch(
                 .zip(word.chars())
                 .map(|(m, c)| {
                     match m {
-                        MatchLetter::Null => format!(" {} ", c),
-                        MatchLetter::Close => format!("({})", c),
+                        MatchLetter::Null  => format!(" {} ", c),
+                        MatchLetter::Close => format!(":{}:", c),
                         MatchLetter::Exact => format!("[{}]", c),
                     }
                 })

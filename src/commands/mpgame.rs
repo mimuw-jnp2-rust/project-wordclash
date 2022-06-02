@@ -4,6 +4,10 @@ use crate::config;
 use poise::serenity_prelude as serenity;
 use serenity::SerenityError::Other as AuxError;
 
+/// Challenge an user to a Worduel
+/// 
+/// Supplied word must be within reasonable length bounds
+/// and appear in the dictionary.
 #[poise::command(slash_command, category = "Worduel")]
 pub async fn worduel_challenge(
     ctx: Context<'_>,
@@ -72,6 +76,9 @@ pub async fn worduel_challenge(
     Ok(())
 }
 
+/// Accept a Worduel invitation
+/// 
+/// The word you specify will be what the inviter has to guess.
 #[poise::command(slash_command, category = "Worduel")]
 pub async fn worduel_accept(
     ctx: Context<'_>,
@@ -137,6 +144,11 @@ pub async fn worduel_accept(
     Ok(())
 }
 
+/// Send a guess to the current Worduel
+/// 
+/// On your side, of course.
+/// The game ends for you if you get an exact match
+/// or if you run out of guesses.
 #[poise::command(slash_command, category = "Worduel")]
 pub async fn worduel_send(
     ctx: Context<'_>,
@@ -263,7 +275,11 @@ pub async fn worduel_send(
     Ok(())
 }
 
-
+/// Forfeit from a Worduel
+/// 
+/// Can also be used to reject invitations.
+/// To make sure you don't accidentally forfeit,
+/// you have to specify the enemy's tag in the command invocation.
 #[poise::command(slash_command, category = "Worduel")]
 pub async fn worduel_forfeit(
     ctx: Context<'_>,
