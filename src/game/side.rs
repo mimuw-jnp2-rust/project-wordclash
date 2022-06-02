@@ -18,10 +18,6 @@ impl GameSide {
         }
     }
     
-    pub fn count_guesses(&self) -> usize {
-        self.guesses.len()
-    }
-
     // Returns score, assuming that the last guess is winning.
     // seconds: time advantage over opposite player, in seconds (0 if last)
     pub fn calculate_score(&self, seconds: u64, max_guesses: usize) -> u64 {

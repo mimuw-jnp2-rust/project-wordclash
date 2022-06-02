@@ -219,7 +219,7 @@ mod test {
     use super::*;
     use poise::serenity_prelude as serenity;
     use serenity::UserId;
-    const sep: &str = " \u{250a} ";
+    use crate::config;
 
     #[test]
     fn basic_game() {
@@ -236,7 +236,7 @@ mod test {
 
         assert_eq!(game.send_guess(0, "tower".to_string()), true);
         assert_eq!(game.send_guess(1, "trial".to_string()), true);
-        println!("Game state:\n{}", game.render_views(sep));
+        println!("Game state:\n{}", game.render_views(config::WORDUEL_VIEWSEP));
         assert!(matches!(game.get_progress(), GameProgress::Started));
         
         assert!(game.send_guess(0, "lease".to_string()));
@@ -245,13 +245,13 @@ mod test {
         assert!(matches!(game.get_progress(), GameProgress::Ending(0)));
         assert!(game.send_guess(1, "porty".to_string()));
         assert!(matches!(game.get_progress(), GameProgress::Ending(0)));
-        println!("Game state:\n{}", game.render_views(sep));
+        println!("Game state:\n{}", game.render_views(config::WORDUEL_VIEWSEP));
         
         assert!(matches!(game.get_progress(), GameProgress::Ending(0)));
         assert!(game.send_guess(1, "worth".to_string()));
         assert!(game.send_guess(1, "forth".to_string()));
         assert!(game.send_guess(1, "north".to_string()));
-        println!("Game state: \n{}", game.render_views(sep));
+        println!("Game state: \n{}", game.render_views(config::WORDUEL_VIEWSEP));
         assert!(matches!(game.get_progress(), GameProgress::Over(Some(0))));
         
         let score = *game.get_score();
@@ -269,14 +269,14 @@ mod test {
         assert!(matches!(game.get_progress(), GameProgress::Waiting));
         game.respond("scout".to_string());
         assert!(matches!(game.get_progress(), GameProgress::Started));
-        let view1 = game.render_views(sep);
+        let view1 = game.render_views(config::WORDUEL_VIEWSEP);
 
         assert_eq!(game.send_guess(0, "quince".to_string()), false);
         assert_eq!(game.send_guess(1, "rows".to_string()),   false);
         
         assert_eq!(game.send_guess(2, "steed".to_string()), false);
         
-        assert_eq!(game.render_views(sep), view1);
+        assert_eq!(game.render_views(config::WORDUEL_VIEWSEP), view1);
         assert!(matches!(game.get_progress(), GameProgress::Started));
     }
 }
