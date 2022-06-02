@@ -1,6 +1,6 @@
+use crate::dict::wordmatch::*;
 use poise::serenity_prelude as serenity;
 use serenity::UserId;
-use crate::dict::wordmatch::*;
 
 // Per-side data.
 pub struct GameSide {
@@ -17,13 +17,11 @@ impl GameSide {
             baseword: String::new(),
         }
     }
-    
+
     // Returns score, assuming that the last guess is winning.
     // seconds: time advantage over opposite player, in seconds (0 if last)
     pub fn calculate_score(&self, seconds: u64, max_guesses: usize) -> u64 {
-        seconds + (1 + max_guesses - std::cmp::min(
-            self.guesses.len(), max_guesses
-        )) as u64 * 5
+        seconds + (1 + max_guesses - std::cmp::min(self.guesses.len(), max_guesses)) as u64 * 5
     }
 
     // Returns true if guess results in victory..
@@ -32,14 +30,14 @@ impl GameSide {
         self.guesses.push((guess, wmatch));
         self.victorious()
     }
-    
+
     // See if the last guess is an exact match for every letter.
     // That's the win condition.
     pub fn victorious(&self) -> bool {
-        self.guesses.last()
-            .map_or(false,
-            |g| g.1 // within match vector
+        self.guesses.last().map_or(false, |g| {
+            g.1 // within match vector
                 .iter()
-                .all(|&e| e == MatchLetter::Exact)) // test if all matches exact
+                .all(|&e| e == MatchLetter::Exact)
+        }) // test if all matches exact
     }
 }

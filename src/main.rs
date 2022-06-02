@@ -3,13 +3,13 @@ use serenity::UserId;
 use std::collections::HashMap;
 use tokio::sync::RwLock as TokioRwLock;
 
-use std::env;
 use std::collections::HashSet;
+use std::env;
 
-mod dict;
 mod commands;
-mod game;
 mod config;
+mod dict;
+mod game;
 // use serde::{Deserialize, Serialize};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -68,7 +68,6 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-
 #[tokio::main]
 async fn main() {
     let token_errstr: String = format!("Missing token variable ({})", TOKEN_VARNAME);
@@ -89,7 +88,7 @@ async fn main() {
         },
         ..Default::default()
     };
-    
+
     let framework = poise::Framework::build()
         .token(env::var(TOKEN_VARNAME).expect(&token_errstr))
         .user_data_setup(move |_ctx, _ready, _fw| {
@@ -102,7 +101,9 @@ async fn main() {
             })
         })
         .options(options)
-        .intents(serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT);
-    
+        .intents(
+            serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
+        );
+
     framework.run().await.unwrap();
 }

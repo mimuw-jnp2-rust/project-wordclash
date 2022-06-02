@@ -1,6 +1,6 @@
+use crate::dict::wordmatch::*;
 use poise::serenity_prelude as serenity;
 use serenity::UserId;
-use crate::dict::wordmatch::*;
 use std::time::Instant;
 
 use super::side::GameSide;
@@ -11,7 +11,7 @@ use super::side::GameSide;
 pub enum GameProgress {
     Waiting,
     Started,
-    Ending(usize), // .0 indicates player who finished
+    Ending(usize),       // .0 indicates player who finished
     Over(Option<usize>), // .0 indicates winning player if Some, or draw if None
 }
 
@@ -47,7 +47,7 @@ impl GameMP {
     pub fn get_word_length(&self) -> usize {
         self.side[1].baseword.len()
     }
-    
+
     // Match an user ID to a side index.
     pub fn match_user(&self, id: UserId) -> Option<usize> {
         for i in 0..2 {
@@ -80,15 +80,12 @@ impl GameMP {
         }
         let spans = self.end.map(|e| e.unwrap().duration_since(self.start));
         // The last of the two ends
-        let max_end = spans.iter()
-            .max()
-            .unwrap();
+        let max_end = spans.iter().max().unwrap();
         // Duration to add before as_secs to achieve "rounding up" behavior
         // Equal to one second minus one smallest unit of duration (ns)
         let near_second = std::time::Duration::from_nanos(999_999_999);
         // Second count based on spans, used as input for score calculation
-        let mut secscores = spans
-            .map(|s| (*max_end - s + near_second).as_secs());
+        let mut secscores = spans.map(|s| (*max_end - s + near_second).as_secs());
 
         // Cache victory result
         let victory: Vec<_> = self.side.iter().map(|s| s.victorious()).collect();
@@ -100,12 +97,11 @@ impl GameMP {
             if !victory[i] {
                 self.score[i] = 0;
             } else {
-                self.score[i] = self.side[i]
-                    .calculate_score(secscores[i], self.max_guesses);
+                self.score[i] = self.side[i].calculate_score(secscores[i], self.max_guesses);
             }
         }
     }
-    // Send a guess as player number `index`. 
+    // Send a guess as player number `index`.
     // Returns true if accepted. Adjusts progress.
     pub fn send_guess(&mut self, index: usize, guess: String) -> bool {
         if index >= PLAYER_CAP || self.get_word_length() != guess.len() {
@@ -120,7 +116,7 @@ impl GameMP {
                     self.end[index] = Some(Instant::now());
                 }
                 true
-            },
+            }
             GameProgress::Ending(other) => {
                 if other == index {
                     return false;
@@ -131,47 +127,49 @@ impl GameMP {
                     self.end[index] = Some(Instant::now());
                     self.calculate_scores();
 
-                    use GameProgress::Over;
                     use std::cmp::Ordering::*;
+                    use GameProgress::Over;
                     match self.score[0].cmp(&self.score[1]) {
-                        Less => { self.progress = Over(Some(1)); },
-                        Equal => { self.progress = Over(None); },
-                        Greater => { self.progress = Over(Some(0)); },
+                        Less => {
+                            self.progress = Over(Some(1));
+                        }
+                        Equal => {
+                            self.progress = Over(None);
+                        }
+                        Greater => {
+                            self.progress = Over(Some(0));
+                        }
                     }
                 }
                 true
             }
-            _ => false
+            _ => false,
         }
     }
-    
+
     pub fn render_view(&self, index: usize) -> String {
         let mut out = String::with_capacity(self.max_guesses * 20);
-        let empty_line: String = (0..self.get_word_length() * 3)
-            .map(|_| ' ')
-            .collect();
+        let empty_line: String = (0..self.get_word_length() * 3).map(|_| ' ').collect();
         let side = &self.side[index];
 
         for i in 0..self.max_guesses {
             if let Some(row) = side.guesses.get(i) {
-                row.0.chars()
-                    .zip(row.1.iter())
-                    .for_each(|(c, m)| {
-                        use MatchLetter::*;
-                        let a_str = match m {
-                            Null =>  format!(" {} ", c).to_uppercase(),
-                            Close => format!(":{}:", c).to_uppercase(),
-                            Exact => format!("[{}]", c).to_uppercase(),
-                        };
-                        out.push_str(&a_str);
-                    });
+                row.0.chars().zip(row.1.iter()).for_each(|(c, m)| {
+                    use MatchLetter::*;
+                    let a_str = match m {
+                        Null => format!(" {} ", c).to_uppercase(),
+                        Close => format!(":{}:", c).to_uppercase(),
+                        Exact => format!("[{}]", c).to_uppercase(),
+                    };
+                    out.push_str(&a_str);
+                });
             } else {
                 out.push_str(&empty_line);
             }
-            if i+1 < self.max_guesses {
+            if i + 1 < self.max_guesses {
                 out.push('\n');
             }
-        };
+        }
         out
     }
 
@@ -179,11 +177,8 @@ impl GameMP {
     pub fn render_views(&self, separator: &str) -> String {
         self.render_view(0)
             .split('\n')
-            .zip(self.render_view(1)
-                .split('\n'))
-            .map(|(a, b)| {
-                [a, b].join(separator)
-            })
+            .zip(self.render_view(1).split('\n'))
+            .map(|(a, b)| [a, b].join(separator))
             .collect::<Vec<_>>()
             .join("\n")
     }
@@ -196,19 +191,19 @@ impl GameMP {
     pub fn get_end(&self, index: usize) -> Option<Instant> {
         self.end.get(index).and_then(|e| *e)
     }
-    
+
     pub fn get_score(&self) -> &[u64; 2] {
         &self.score
     }
-    
+
     pub fn get_max_guesses(&self) -> usize {
         self.max_guesses
     }
-    
+
     pub fn get_progress(&self) -> &GameProgress {
         &self.progress
     }
-    
+
     pub fn get_user_id(&self, index: usize) -> UserId {
         self.side[index].id
     }
@@ -217,9 +212,9 @@ impl GameMP {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::config;
     use poise::serenity_prelude as serenity;
     use serenity::UserId;
-    use crate::config;
 
     #[test]
     fn basic_game() {
@@ -236,24 +231,33 @@ mod test {
 
         assert_eq!(game.send_guess(0, "tower".to_string()), true);
         assert_eq!(game.send_guess(1, "trial".to_string()), true);
-        println!("Game state:\n{}", game.render_views(config::WORDUEL_VIEWSEP));
+        println!(
+            "Game state:\n{}",
+            game.render_views(config::WORDUEL_VIEWSEP)
+        );
         assert!(matches!(game.get_progress(), GameProgress::Started));
-        
+
         assert!(game.send_guess(0, "lease".to_string()));
         assert!(game.send_guess(1, "rites".to_string()));
         assert!(game.send_guess(0, "slide".to_string()));
         assert!(matches!(game.get_progress(), GameProgress::Ending(0)));
         assert!(game.send_guess(1, "porty".to_string()));
         assert!(matches!(game.get_progress(), GameProgress::Ending(0)));
-        println!("Game state:\n{}", game.render_views(config::WORDUEL_VIEWSEP));
-        
+        println!(
+            "Game state:\n{}",
+            game.render_views(config::WORDUEL_VIEWSEP)
+        );
+
         assert!(matches!(game.get_progress(), GameProgress::Ending(0)));
         assert!(game.send_guess(1, "worth".to_string()));
         assert!(game.send_guess(1, "forth".to_string()));
         assert!(game.send_guess(1, "north".to_string()));
-        println!("Game state: \n{}", game.render_views(config::WORDUEL_VIEWSEP));
+        println!(
+            "Game state: \n{}",
+            game.render_views(config::WORDUEL_VIEWSEP)
+        );
         assert!(matches!(game.get_progress(), GameProgress::Over(Some(0))));
-        
+
         let score = *game.get_score();
         println!("Scores: {}, {}", score[0], score[1]);
         // Subject to change with changes in score calculation.
@@ -272,10 +276,10 @@ mod test {
         let view1 = game.render_views(config::WORDUEL_VIEWSEP);
 
         assert_eq!(game.send_guess(0, "quince".to_string()), false);
-        assert_eq!(game.send_guess(1, "rows".to_string()),   false);
-        
+        assert_eq!(game.send_guess(1, "rows".to_string()), false);
+
         assert_eq!(game.send_guess(2, "steed".to_string()), false);
-        
+
         assert_eq!(game.render_views(config::WORDUEL_VIEWSEP), view1);
         assert!(matches!(game.get_progress(), GameProgress::Started));
     }

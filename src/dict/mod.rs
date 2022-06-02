@@ -1,7 +1,7 @@
-use std::env;
 use std::collections::HashSet;
-use tokio::io::AsyncReadExt;
+use std::env;
 use std::path::{Path, PathBuf};
+use tokio::io::AsyncReadExt;
 
 pub const DICT_VARNAME: &str = "WORDCLASH_DICTIONARY";
 pub const DICT_FILENAME: &str = "dictionary.json";
@@ -10,12 +10,13 @@ pub const DICT_FILENAME: &str = "dictionary.json";
 pub fn get_dict_path() -> PathBuf {
     env::var(DICT_VARNAME)
         .map(PathBuf::from)
-        .or_else(|_| std::env::current_exe()
-            .map(|mut p| {
+        .or_else(|_| {
+            std::env::current_exe().map(|mut p| {
                 p.pop();
                 p.push(DICT_FILENAME);
                 p
-            }))
+            })
+        })
         .expect("Dictionary not found")
 }
 
@@ -25,10 +26,10 @@ pub async fn load_dictionary_from(path: &Path) -> HashSet<String> {
         .await
         .expect("Failed to open dictionary");
     let mut buf = Vec::new();
-    file.read_to_end(&mut buf).await
+    file.read_to_end(&mut buf)
+        .await
         .expect("Failed to read dictionary");
-    serde_json::from_slice(&buf)
-        .expect("Failed to deserialize dictionary")
+    serde_json::from_slice(&buf).expect("Failed to deserialize dictionary")
 }
 
 // Load dictionary from default path.
