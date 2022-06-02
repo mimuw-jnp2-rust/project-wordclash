@@ -9,7 +9,7 @@ pub const DICT_FILENAME: &str = "dictionary.json";
 // Get dictionary path from environment variables or executable path.
 pub fn get_dict_path() -> PathBuf {
     env::var(DICT_VARNAME)
-        .map(|dict| PathBuf::from(dict))
+        .map(PathBuf::from)
         .or_else(|_| std::env::current_exe()
             .map(|mut p| {
                 p.pop();

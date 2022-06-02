@@ -44,7 +44,7 @@ pub async fn worduel_challenge(
     let mut mplock = ctx.data().mpgames.write().await;
     { // Own data scope
         let userdata1 = udlock.entry(own_id)
-            .or_insert(UserData::new());
+            .or_insert_with(UserData::new);
         if !matches!(userdata1.player.game, ActiveGame::None) {
             ctx.say("**Error:** You're already in a game. Finish or forfeit if you want to start a new one.").await?;
             return Ok(());
@@ -54,7 +54,7 @@ pub async fn worduel_challenge(
     }
     // Access opponent data
     udlock.entry(other_id)
-        .or_insert(UserData::new())
+        .or_insert_with(UserData::new)
         .player.game = ActiveGame::Multiplayer(own_id);
     let gamedata = mplock.get(&own_id).unwrap(); // why wouldn't it exist?
 
@@ -193,7 +193,7 @@ pub async fn worduel_send(
             }
         };
         let player_index = gamedata.match_user(own_id)
-            .map(|i| Ok(i))
+            .map(Ok)
             .unwrap_or(Err(AuxError("User ID bound to game, but not actually in game!")))?;
         let enemy_id = gamedata.get_user_id(1-player_index);
 
@@ -216,7 +216,7 @@ pub async fn worduel_send(
                 .push(gamedata.get_end(i)
                     .map(|e| format!("{} seconds",
                         (e-gamedata.get_start()).as_secs()))
-                    .unwrap_or("some time".to_string()))
+                    .unwrap_or_else(|| "some time".to_string()))
                 .push(", game in progress"),
             Over(None) => state.push("Game over (draw)"),
             Over(Some(i)) => {
@@ -322,7 +322,7 @@ pub async fn worduel_forfeit(
             }
         };
         let player_index = gamedata.match_user(own_id)
-            .map(|i| Ok(i))
+            .map(Ok)
             .unwrap_or(Err(AuxError("User ID bound to game, but not actually in game!")))?;
         let enemy_id = gamedata.get_user_id(1-player_index);
         
@@ -344,7 +344,7 @@ pub async fn worduel_forfeit(
                 .push(gamedata.get_end(i)
                     .map(|e| format!("{} seconds",
                         (e-gamedata.get_start()).as_secs()))
-                    .unwrap_or("some time".to_string()))
+                    .unwrap_or_else(|| "some time".to_string()))
                 .push(", game in progress"),
             Over(_) => state.push("Game over")
         };

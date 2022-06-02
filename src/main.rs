@@ -27,6 +27,12 @@ impl UserData {
     }
 }
 
+impl Default for UserData {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct CtxData {
     dict: HashSet<String>, // immutable
     mpgames: TokioRwLock<HashMap<UserId, game::GameMP>>,
@@ -85,7 +91,7 @@ async fn main() {
     };
     
     let framework = poise::Framework::build()
-        .token(env::var(TOKEN_VARNAME).expect(token_errstr.as_str()))
+        .token(env::var(TOKEN_VARNAME).expect(&token_errstr))
         .user_data_setup(move |_ctx, _ready, _fw| {
             Box::pin(async move {
                 Ok(CtxData {
