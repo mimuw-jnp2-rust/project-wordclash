@@ -1,6 +1,7 @@
 use poise::serenity_prelude as serenity;
 use serenity::UserId;
-use dashmap::DashMap;
+use std::collections::HashMap;
+use tokio::sync::RwLock as TokioRwLock;
 
 use std::env;
 use std::collections::HashSet;
@@ -8,6 +9,7 @@ use std::collections::HashSet;
 mod dict;
 mod commands;
 mod game;
+mod config;
 // use serde::{Deserialize, Serialize};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -17,10 +19,18 @@ pub struct UserData {
     player: game::PlayerData,
 }
 
+impl UserData {
+    pub fn new() -> UserData {
+        UserData {
+            player: game::PlayerData::new(),
+        }
+    }
+}
+
 pub struct CtxData {
     dict: HashSet<String>, // immutable
-    mpgames: DashMap<UserId, game::GameMP>,
-    userdata: DashMap<UserId, UserData>,
+    mpgames: TokioRwLock<HashMap<UserId, game::GameMP>>,
+    userdata: TokioRwLock<HashMap<UserId, UserData>>,
 }
 
 const TOKEN_VARNAME: &str = "DISCORD_TOKEN";
@@ -63,6 +73,9 @@ async fn main() {
             register(),
             commands::dict::lookup(),
             commands::dict::testmatch(),
+            commands::mpgame::worduel_challenge(),
+            commands::mpgame::worduel_accept(),
+            commands::mpgame::worduel_send(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("!".into()),
@@ -77,8 +90,8 @@ async fn main() {
             Box::pin(async move {
                 Ok(CtxData {
                     dict: dict::load_dictionary().await,
-                    mpgames: DashMap::new(),
-                    userdata: DashMap::new(),
+                    mpgames: TokioRwLock::new(HashMap::new()),
+                    userdata: TokioRwLock::new(HashMap::new()),
                 })
             })
         })

@@ -60,6 +60,9 @@ impl GameMP {
 
     // Respond to started game with a word for the challenger, and start the game if valid.
     pub fn respond(&mut self, word: String) -> bool {
+        if !matches!(self.progress, GameProgress::Waiting) {
+            return false;
+        }
         if word.len() != self.get_word_length() {
             return false;
         }
@@ -105,9 +108,6 @@ impl GameMP {
     // Send a guess as player number `index`. 
     // Returns true if accepted. Adjusts progress.
     pub fn send_guess(&mut self, index: usize, guess: String) -> bool {
-        if let GameProgress::Waiting = self.get_progress() {
-            return false;
-        }
         if index >= PLAYER_CAP || self.get_word_length() != guess.len() {
             return false;
         }
@@ -201,8 +201,16 @@ impl GameMP {
         &self.score
     }
     
+    pub fn get_max_guesses(&self) -> usize {
+        self.max_guesses
+    }
+    
     pub fn get_progress(&self) -> &GameProgress {
         &self.progress
+    }
+    
+    pub fn get_user_id(&self, index: usize) -> UserId {
+        self.side[index].id
     }
 }
 
