@@ -366,7 +366,7 @@ pub async fn worduel_forfeit(
         let enemy_id = gamedata.get_user_id(1 - player_index);
 
         if user_unwrapped.id != enemy_id {
-            ctx.say("Specify your enemy's name specifically to forfeit a duel.")
+            ctx.say("Specify your opponent's name to forfeit a duel. That's not your opponent.")
                 .await?;
             return Ok(());
         }
@@ -376,7 +376,7 @@ pub async fn worduel_forfeit(
 
         let mut state = serenity::MessageBuilder::new();
         match progress {
-            Waiting => state.push("Waiting (this should not appear)"),
+            Waiting => state.push("Waiting for acceptance"),
             Started => state.push("Both players active, game in progress"),
             Ending(i) => state
                 .push("Player ")
