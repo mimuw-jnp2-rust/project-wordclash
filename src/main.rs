@@ -62,7 +62,7 @@ This is an example bot made to showcase features of my custom Discord bot framew
     Ok(())
 }
 
-#[poise::command(prefix_command, hide_in_help)]
+#[poise::command(prefix_command, slash_command, hide_in_help)]
 async fn register(ctx: Context<'_>) -> Result<(), Error> {
     poise::builtins::register_application_commands_buttons(ctx).await?;
     Ok(())
@@ -81,6 +81,8 @@ async fn main() {
             commands::mpgame::worduel_challenge(),
             commands::mpgame::worduel_accept(),
             commands::mpgame::worduel_send(),
+            commands::mpgame::worduel_forfeit(),
+            commands::misc::roll_dice(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("!".into()),
