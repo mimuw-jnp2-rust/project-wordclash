@@ -708,6 +708,7 @@ version = "0.1.0"
 dependencies = [
  "dashmap",
  "poise",
+ "rand",
  "serde",
  "serde_json",
  "tokio",
