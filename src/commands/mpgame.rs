@@ -219,7 +219,7 @@ pub async fn worduel_send(
                     .push(')')
             }
         };
-        let views = gamedata.render_views(" \u{250a} ");
+        let views = gamedata.render_views(config::WORDUEL_VIEWSEP);
         
         let mut content = serenity::MessageBuilder::new();
         match progress {
@@ -228,6 +228,9 @@ pub async fn worduel_send(
                 .push(", the victor is ")
                 .user(gamedata.get_user_id(i))
                 .push("!"),
+            Over(None) => content.push("Game over, ")
+                .user(enemy_id)
+                .push(", this duel ended in a draw."),
             _ => if success {
                 content.push("Word has been sent!")
             } else {
@@ -254,7 +257,109 @@ pub async fn worduel_send(
                 e.title("Worduel status")
                     .field("Game state", stateline, true)
                     .color((255, 204, 11))
-                    .description(views)
+                    .description(format!("```\n{}\n```", views))
+            })
+    }).await?;
+    Ok(())
+}
+
+
+#[poise::command(slash_command, category = "Worduel")]
+pub async fn worduel_forfeit(
+    ctx: Context<'_>,
+    #[description = "Enemy username"] user: Option<serenity::User>
+) -> Result<(), Error> {
+    let own_id = ctx.author().id;
+    let mut udlock = ctx.data().userdata.write().await;
+    let mut mplock = ctx.data().mpgames.write().await;
+
+    let user_unwrapped = match user {
+        None => {
+            ctx.say("To prevent accidental forfeiture, mention your opponent in this command.").await?;
+            return Ok(());
+        },
+        Some(u) => u,
+    };
+
+    let (stateline, content, views, game_id, other_id) = {
+        let (userdata, game_id) = if let Some(udata) = udlock.get_mut(&own_id) {
+            match udata.player.game {
+                ActiveGame::Multiplayer(oid) => {
+                    (udata, oid)
+                },
+                _ => {
+                    ctx.say("**Error:** Not in a game.").await?;
+                    return Ok(());
+                },
+            }
+        } else {
+            ctx.say("**Error:** Not in a game.").await?;
+            return Ok(());
+        };
+
+        let gamedata = match mplock.get_mut(&game_id) {
+            Some(d) => d,
+            None => {
+                ctx.say("**Error:** Game assigned, but deleted.").await?;
+                userdata.player.game = ActiveGame::None;
+                return Ok(());
+            }
+        };
+        let player_index = gamedata.match_user(own_id)
+            .map(|i| Ok(i))
+            .unwrap_or(Err(AuxError("User ID bound to game, but not actually in game!")))?;
+        let enemy_id = gamedata.get_user_id(1-player_index);
+        
+        if user_unwrapped.id != enemy_id {
+            ctx.say("Specify your enemy's name specifically to forfeit a duel.").await?;
+            return Ok(());
+        }
+
+        use multiplayer::GameProgress::*;
+        let progress = gamedata.get_progress().clone();
+
+        let mut state = serenity::MessageBuilder::new();
+        match progress {
+            Waiting => state.push("Waiting (this should not appear)"),
+            Started => state.push("Both players active, game in progress"),
+            Ending(i) => state.push("Player ")
+                .push(i.to_string())
+                .push(" finished in ")
+                .push(gamedata.get_end(i)
+                    .map(|e| format!("{} seconds",
+                        (e-gamedata.get_start()).as_secs()))
+                    .unwrap_or("some time".to_string()))
+                .push(", game in progress"),
+            Over(_) => state.push("Game over")
+        };
+        let views = gamedata.render_views(config::WORDUEL_VIEWSEP);
+        
+        let mut content = serenity::MessageBuilder::new();
+        match progress {
+            Waiting => content
+                .user(enemy_id)
+                .push(", your invitation has been rejected."),
+            _ => content.user(enemy_id)
+                .push(", your opponent has forfeited this game.")
+        };
+        (state.build(), content.build(), views, game_id, enemy_id)
+    };
+
+    mplock.remove(&game_id);
+    if let Some(udata) = udlock.get_mut(&own_id) {
+        udata.player.game = ActiveGame::None;
+    }
+    if let Some(udata2) = udlock.get_mut(&other_id) {
+        udata2.player.game = ActiveGame::None;
+    }
+
+    ctx.send(|m| {
+        m.content(content)
+            .embed(|e| {
+                e.title("Worduel status before forfeit")
+                    .field("Last game state", stateline, true)
+                    .color((255, 204, 11))
+                    .description(format!("```\n{}\n```", views))
             })
     }).await?;
     Ok(())
