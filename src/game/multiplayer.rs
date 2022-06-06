@@ -188,11 +188,11 @@ impl GameMP {
             }
             out.push('\n');
             for letter in row.chars() {
-                let emoji_str = match side.keyboard.get(letter) {
+                let emoji_str = match side.keyboard.get(&letter) {
                     None => ":white_large_square: ",
-                    Some(Null) => ":black_large_square: ",
-                    Some(Close) => ":yellow_square: ",
-                    Some(Exact) => ":green_square: ",
+                    Some(MatchLetter::Null) => ":black_large_square: ",
+                    Some(MatchLetter::Close) => ":yellow_square: ",
+                    Some(MatchLetter::Exact) => ":green_square: ",
                 };
                 out.push_str(&emoji_str);
             }

@@ -17,6 +17,7 @@ impl GameSide {
             id: uid,
             guesses: Vec::new(),
             baseword: String::new(),
+            keyboard: HashMap::new(),
         }
     }
 
