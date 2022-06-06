@@ -424,3 +424,51 @@ pub async fn worduel_forfeit(
     .await?;
     Ok(())
 }
+
+/// Show the letter usage in your current game.
+///
+/// This is a display-only keyboard, you can't use it for input.
+#[poise::command(slash_command, category = "Worduel")]
+pub async fn worduel_keyboard(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+
+
+    let own_id = ctx.author().id;
+    let mut udlock = ctx.data().userdata.write().await;
+    let mut mplock = ctx.data().mpgames.write().await;
+
+    let (userdata, game_id) = if let Some(udata) = udlock.get_mut(&own_id) {
+        match udata.player.game {
+            ActiveGame::Multiplayer(oid) => (udata, oid),
+            _ => {
+                ctx.say("**Error:** Not in a game.").await?;
+                return Ok(());
+            }
+        }
+    } else {
+        ctx.say("**Error:** Not in a game.").await?;
+        return Ok(());
+    };
+
+    let gamedata = match mplock.get_mut(&game_id) {
+        Some(d) => d,
+        None => {
+            ctx.say("**Error:** Game assigned, but deleted.").await?;
+            userdata.player.game = ActiveGame::None;
+            return Ok(());
+        }
+    };
+    let player_index = gamedata.match_user(own_id).map(Ok).unwrap_or(Err(AuxError(
+        "User ID bound to game, but not actually in game!",
+    )))?;
+
+    let keyboard = gamedata.render_keyboard(player_index);
+
+    ctx.send(|m| {
+        m.content(keyboard)
+            .ephemeral(true)
+    }).await?;
+    Ok(())
+
+}
