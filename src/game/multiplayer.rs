@@ -26,6 +26,8 @@ pub struct GameMP {
 }
 
 const PLAYER_CAP: usize = 2;
+const EMOJI_WIDTH: usize = 25;
+const ALPHA_LENGTH: usize = 26;
 
 impl GameMP {
     // Start of a game.
@@ -169,6 +171,32 @@ impl GameMP {
             if i + 1 < self.max_guesses {
                 out.push('\n');
             }
+        }
+        out
+    }
+
+    pub fn render_keyboard(&self, index: usize) -> String {
+        let rows = vec!["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+
+        let mut out = String::with_capacity(ALPHA_LENGTH * EMOJI_WIDTH);
+        let side = &self.side[index];
+
+        for row in rows {
+            for letter in row.chars() {
+                let emoji_str = format!(":regional_indicator_{}: ", letter);
+                out.push_str(&emoji_str);
+            }
+            out.push('\n');
+            for letter in row.chars() {
+                let emoji_str = match side.keyboard.get(letter) {
+                    None => ":white_large_square: ",
+                    Some(Null) => ":black_large_square: ",
+                    Some(Close) => ":yellow_square: ",
+                    Some(Exact) => ":green_square: ",
+                };
+                out.push_str(&emoji_str);
+            }
+            out.push('\n');
         }
         out
     }
