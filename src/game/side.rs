@@ -1,12 +1,14 @@
 use crate::dict::wordmatch::*;
 use poise::serenity_prelude as serenity;
 use serenity::UserId;
+use std::collections::HashMap;
 
 // Per-side data.
 pub struct GameSide {
     pub id: UserId,
     pub baseword: String,
     pub guesses: Vec<(String, Vec<MatchLetter>)>,
+    pub keyboard: HashMap<char, MatchLetter>,
 }
 
 impl GameSide {
@@ -27,6 +29,10 @@ impl GameSide {
     // Returns true if guess results in victory..
     pub fn push_guess(&mut self, guess: String) -> bool {
         let wmatch = match_word(&self.baseword, &guess);
+        guess
+            .chars()
+            .zip(wmatch.iter())
+            .map(|(c, e)| self.keyboard.insert(c, *e));
         self.guesses.push((guess, wmatch));
         self.victorious()
     }
