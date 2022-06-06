@@ -30,10 +30,9 @@ impl GameSide {
     // Returns true if guess results in victory..
     pub fn push_guess(&mut self, guess: String) -> bool {
         let wmatch = match_word(&self.baseword, &guess);
-        guess
-            .chars()
-            .zip(wmatch.iter())
-            .map(|(c, e)| self.keyboard.insert(c, *e));
+        guess.chars().zip(wmatch.iter()).for_each(|(c, e)| {
+            self.keyboard.insert(c, *e);
+        });
         self.guesses.push((guess, wmatch));
         self.victorious()
     }
