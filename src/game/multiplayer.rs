@@ -212,7 +212,7 @@ impl GameMP {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::config;
+    use crate::constants;
     use poise::serenity_prelude as serenity;
     use serenity::UserId;
 
@@ -233,7 +233,7 @@ mod test {
         assert_eq!(game.send_guess(1, "trial".to_string()), true);
         println!(
             "Game state:\n{}",
-            game.render_views(config::WORDUEL_VIEWSEP)
+            game.render_views(constants::WORDUEL_VIEWSEP)
         );
         assert!(matches!(game.get_progress(), GameProgress::Started));
 
@@ -245,7 +245,7 @@ mod test {
         assert!(matches!(game.get_progress(), GameProgress::Ending(0)));
         println!(
             "Game state:\n{}",
-            game.render_views(config::WORDUEL_VIEWSEP)
+            game.render_views(constants::WORDUEL_VIEWSEP)
         );
 
         assert!(matches!(game.get_progress(), GameProgress::Ending(0)));
@@ -254,7 +254,7 @@ mod test {
         assert!(game.send_guess(1, "north".to_string()));
         println!(
             "Game state: \n{}",
-            game.render_views(config::WORDUEL_VIEWSEP)
+            game.render_views(constants::WORDUEL_VIEWSEP)
         );
         assert!(matches!(game.get_progress(), GameProgress::Over(Some(0))));
 
@@ -273,14 +273,14 @@ mod test {
         assert!(matches!(game.get_progress(), GameProgress::Waiting));
         game.respond("scout".to_string());
         assert!(matches!(game.get_progress(), GameProgress::Started));
-        let view1 = game.render_views(config::WORDUEL_VIEWSEP);
+        let view1 = game.render_views(constants::WORDUEL_VIEWSEP);
 
         assert_eq!(game.send_guess(0, "quince".to_string()), false);
         assert_eq!(game.send_guess(1, "rows".to_string()), false);
 
         assert_eq!(game.send_guess(2, "steed".to_string()), false);
 
-        assert_eq!(game.render_views(config::WORDUEL_VIEWSEP), view1);
+        assert_eq!(game.render_views(constants::WORDUEL_VIEWSEP), view1);
         assert!(matches!(game.get_progress(), GameProgress::Started));
     }
 }

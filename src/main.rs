@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use std::env;
 
 mod commands;
-mod config;
+mod constants;
 mod dict;
 mod game;
 // use serde::{Deserialize, Serialize};
