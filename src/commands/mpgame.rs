@@ -429,11 +429,7 @@ pub async fn worduel_forfeit(
 ///
 /// This is a display-only keyboard, you can't use it for input.
 #[poise::command(slash_command, category = "Worduel")]
-pub async fn worduel_keyboard(
-    ctx: Context<'_>,
-) -> Result<(), Error> {
-
-
+pub async fn worduel_keyboard(ctx: Context<'_>) -> Result<(), Error> {
     let own_id = ctx.author().id;
     let mut udlock = ctx.data().userdata.write().await;
     let mut mplock = ctx.data().mpgames.write().await;
@@ -465,10 +461,6 @@ pub async fn worduel_keyboard(
 
     let keyboard = gamedata.render_keyboard(player_index);
 
-    ctx.send(|m| {
-        m.content(keyboard)
-            .ephemeral(true)
-    }).await?;
+    ctx.send(|m| m.content(keyboard).ephemeral(true)).await?;
     Ok(())
-
 }

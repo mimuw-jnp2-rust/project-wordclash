@@ -27,11 +27,13 @@ impl GameSide {
         seconds + (1 + max_guesses - std::cmp::min(self.guesses.len(), max_guesses)) as u64 * 5
     }
 
-    // Returns true if guess results in victory..
+    // Returns true if guess results in victory.
     pub fn push_guess(&mut self, guess: String) -> bool {
         let wmatch = match_word(&self.baseword, &guess);
         guess.chars().zip(wmatch.iter()).for_each(|(c, e)| {
-            self.keyboard.insert(c, *e);
+            // Without this max, repeated characters might mess with results
+            let kbpos = self.keyboard.entry(c).or_insert(MatchLetter::Null);
+            *kbpos = std::cmp::max(*kbpos, *e);
         });
         self.guesses.push((guess, wmatch));
         self.victorious()
@@ -43,7 +45,7 @@ impl GameSide {
         self.guesses.last().map_or(false, |g| {
             g.1 // within match vector
                 .iter()
-                .all(|&e| e == MatchLetter::Exact)
-        }) // test if all matches exact
+                .all(|&e| e == MatchLetter::Exact) // test if all matches exact
+        })
     }
 }
