@@ -6,6 +6,8 @@ use tokio::io::AsyncReadExt;
 pub const DICT_VARNAME: &str = "WORDCLASH_DICTIONARY";
 pub const DICT_FILENAME: &str = "dictionary.json";
 
+pub type Dictionary = HashSet<String>;
+
 // Get dictionary path from environment variables or executable path.
 pub fn get_dict_path() -> PathBuf {
     env::var(DICT_VARNAME)
@@ -21,7 +23,7 @@ pub fn get_dict_path() -> PathBuf {
 }
 
 // Load dictionary from specified path.
-pub async fn load_dictionary_from(path: &Path) -> HashSet<String> {
+pub async fn load_dictionary_from(path: &Path) -> Dictionary {
     let mut file = tokio::fs::File::open(path)
         .await
         .expect("Failed to open dictionary");
