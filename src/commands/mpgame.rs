@@ -15,9 +15,6 @@ pub async fn worduel_challenge(
     #[description = "Challenged user"] user: serenity::User,
     #[description = "Challenge word"] word: String,
 ) -> Result<(), Error> {
-    if word == "crashity" {
-        return Err(std::fmt::Error.into()).into();
-    }
     let word = queries::ensure_word(&ctx.data().dict, &word)?;
     if user.eq(ctx.author()) {
         return Err(CmdError::BadAccept.into());
