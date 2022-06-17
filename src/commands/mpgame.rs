@@ -184,7 +184,7 @@ pub async fn worduel_send(
                 state
                     .push("Game over (winner: ")
                     .user(id);
-                write!(state.0, ", score: {}:{})", scores[i], scores[1 - i]);
+                write!(state.0, ", score: {}:{})", scores[i], scores[1 - i])?;
                 &mut state
             }
         };
@@ -267,6 +267,7 @@ pub async fn worduel_forfeit(
         let gamedata = match mplock.get_mut(&game_id) {
             Some(d) => d,
             None => {
+                userdata.player.game = ActiveGame::None;
                 return Err(CmdError::GameDeleted.into());
             }
         };
@@ -326,5 +327,31 @@ pub async fn worduel_forfeit(
         })
     })
     .await?;
+    Ok(())
+}
+
+/// Show the letter usage in your current game.
+///
+/// This is a display-only keyboard, you can't use it for input.
+#[poise::command(slash_command, category = "Worduel", ephemeral)]
+pub async fn worduel_keyboard(ctx: Context<'_>) -> Result<(), Error> {
+    let own_id = ctx.author().id;
+    let mut udlock = ctx.data().userdata.write().await;
+    let mut mplock = ctx.data().mpgames.write().await;
+
+    let (userdata, game_id) = queries::unwrap_game_id(udlock.get_mut(&own_id))?;
+
+    let gamedata = match mplock.get_mut(&game_id) {
+        Some(d) => d,
+        None => {
+            userdata.player.game = ActiveGame::None;
+            return Err(CmdError::GameDeleted.into());
+        }
+    };
+    let player_index = gamedata.match_user(game_id).unwrap();
+
+    let keyboard = gamedata.render_keyboard(player_index);
+
+    ctx.send(|m| m.content(keyboard)).await?;
     Ok(())
 }

@@ -1,12 +1,14 @@
 use crate::dict::wordmatch::*;
 use poise::serenity_prelude as serenity;
 use serenity::UserId;
+use std::collections::HashMap;
 
 // Per-side data.
 pub struct GameSide {
     pub id: UserId,
     pub baseword: String,
     pub guesses: Vec<(String, Vec<MatchLetter>)>,
+    pub keyboard: HashMap<char, MatchLetter>,
 }
 
 impl GameSide {
@@ -15,6 +17,7 @@ impl GameSide {
             id: uid,
             guesses: Vec::new(),
             baseword: String::new(),
+            keyboard: HashMap::new(),
         }
     }
 
@@ -24,9 +27,14 @@ impl GameSide {
         seconds + (1 + max_guesses - std::cmp::min(self.guesses.len(), max_guesses)) as u64 * 5
     }
 
-    // Returns true if guess results in victory..
+    // Returns true if guess results in victory.
     pub fn push_guess(&mut self, guess: String) -> bool {
         let wmatch = match_word(&self.baseword, &guess);
+        guess.chars().zip(wmatch.iter()).for_each(|(c, e)| {
+            // Without this max, repeated characters might mess with results
+            let kbpos = self.keyboard.entry(c).or_insert(MatchLetter::Null);
+            *kbpos = std::cmp::max(*kbpos, *e);
+        });
         self.guesses.push((guess, wmatch));
         self.victorious()
     }
@@ -37,7 +45,7 @@ impl GameSide {
         self.guesses.last().map_or(false, |g| {
             g.1 // within match vector
                 .iter()
-                .all(|&e| e == MatchLetter::Exact)
-        }) // test if all matches exact
+                .all(|&e| e == MatchLetter::Exact) // test if all matches exact
+        })
     }
 }
