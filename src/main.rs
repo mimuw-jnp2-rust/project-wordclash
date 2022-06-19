@@ -2,6 +2,7 @@ use poise::serenity_prelude as serenity;
 use serenity::UserId;
 use std::collections::HashMap;
 use tokio::sync::RwLock as TokioRwLock;
+use users::*;
 
 use std::collections::HashSet;
 use std::env;
@@ -10,28 +11,11 @@ mod commands;
 mod constants;
 mod dict;
 mod game;
+mod users;
 // use serde::{Deserialize, Serialize};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, CtxData, Error>;
-
-pub struct UserData {
-    player: game::PlayerData,
-}
-
-impl UserData {
-    pub fn new() -> UserData {
-        UserData {
-            player: game::PlayerData::new(),
-        }
-    }
-}
-
-impl Default for UserData {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 pub struct CtxData {
     dict: HashSet<String>, // immutable
