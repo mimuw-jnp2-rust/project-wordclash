@@ -26,7 +26,7 @@ pub async fn worduel_challenge(
     let mut udlock = ctx.data().userdata.write().await;
 
     if let Some(userdata2) = udlock.get(&user.id) {
-        match userdata2.player.game {
+        match userdata2.player.timed_game {
             ActiveGame::None => {},
             _ => return Err(CmdError::TargetInGame.into()),
         }
@@ -36,21 +36,21 @@ pub async fn worduel_challenge(
     {
         // Own data scope
         let userdata1 = udlock.entry(own_id).or_insert_with(UserData::new);
-        if !matches!(userdata1.player.game, ActiveGame::None) {
+        if !matches!(userdata1.player.timed_game, ActiveGame::None) {
             return Err(CmdError::SelfInGame.into());
         }
         mplock.insert(
             own_id,
             GameMP::create(own_id, other_id, word.to_lowercase()),
         );
-        userdata1.player.game = ActiveGame::Multiplayer(own_id);
+        userdata1.player.timed_game = ActiveGame::Multiplayer(own_id);
     }
     // Access opponent data
     udlock
         .entry(other_id)
         .or_insert_with(UserData::new)
         .player
-        .game = ActiveGame::Multiplayer(own_id);
+        .timed_game = ActiveGame::Multiplayer(own_id);
     let gamedata = mplock.get(&own_id).unwrap(); // why wouldn't it exist?
 
     ctx.channel_id().send_message(&ctx.discord().http, |m| {
@@ -90,25 +90,21 @@ pub async fn worduel_accept(
 
     let (userdata, other_id) = queries::unwrap_game_id(udlock.get_mut(&own_id))?;
 
-    if other_id == own_id {
-        return Err(CmdError::BadAccept.into());
-    }
     let other_user = other_id.to_user(&ctx.discord().http).await?;
 
     let mut mplock = ctx.data().mpgames.write().await;
     let gamedata = match mplock.get_mut(&other_id) {
         Some(d) => d,
         None => {
-            userdata.player.game = ActiveGame::None;
+            userdata.player.timed_game = ActiveGame::None;
             return Err(CmdError::GameDeleted.into());
         }
     };
     if gamedata.get_word_length() != word.len() {
         return Err(CmdError::BadWordLength(word.len()).into());
     }
-    if !gamedata.respond(word) {
-        return Err(CmdError::BadAccept.into());
-    }
+    gamedata.respond(word, own_id)?;
+
     ctx.channel_id().send_message(&ctx.discord().http, |m| {
         m.content(
             serenity::MessageBuilder::new()
@@ -144,7 +140,7 @@ pub async fn worduel_send(
         let gamedata = match mplock.get_mut(&game_id) {
             Some(d) => d,
             None => {
-                userdata.player.game = ActiveGame::None;
+                userdata.player.timed_game = ActiveGame::None;
                 return Err(CmdError::GameDeleted.into());
             }
         };
@@ -221,10 +217,10 @@ pub async fn worduel_send(
     if matches!(progress, multiplayer::GameProgress::Over(_)) {
         mplock.remove(&game_id);
         if let Some(udata) = udlock.get_mut(&own_id) {
-            udata.player.game = ActiveGame::None;
+            udata.player.timed_game = ActiveGame::None;
         }
         if let Some(udata2) = udlock.get_mut(&other_id) {
-            udata2.player.game = ActiveGame::None;
+            udata2.player.timed_game = ActiveGame::None;
         }
     }
 
@@ -265,7 +261,7 @@ pub async fn worduel_forfeit(
         let gamedata = match mplock.get_mut(&game_id) {
             Some(d) => d,
             None => {
-                userdata.player.game = ActiveGame::None;
+                userdata.player.timed_game = ActiveGame::None;
                 return Err(CmdError::GameDeleted.into());
             }
         };
@@ -307,13 +303,13 @@ pub async fn worduel_forfeit(
                 .user(enemy_id)
                 .push(", your opponent has forfeited this game."),
         };
-        userdata.player.game = ActiveGame::None;
+        userdata.player.timed_game = ActiveGame::None;
         (state.build(), content.build(), views, game_id, enemy_id)
     };
 
     mplock.remove(&game_id);
     if let Some(udata2) = udlock.get_mut(&other_id) {
-        udata2.player.game = ActiveGame::None;
+        udata2.player.timed_game = ActiveGame::None;
     }
 
     ctx.send(|m| {
@@ -342,7 +338,7 @@ pub async fn worduel_keyboard(ctx: Context<'_>) -> Result<(), Error> {
     let gamedata = match mplock.get_mut(&game_id) {
         Some(d) => d,
         None => {
-            userdata.player.game = ActiveGame::None;
+            userdata.player.timed_game = ActiveGame::None;
             return Err(CmdError::GameDeleted.into());
         }
     };

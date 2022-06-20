@@ -1,4 +1,5 @@
 use crate::dict::wordmatch::*;
+use crate::commands::util::{CmdError, CmdResult};
 use poise::serenity_prelude as serenity;
 use serenity::UserId;
 use std::time::Instant;
@@ -61,17 +62,21 @@ impl GameMP {
     }
 
     // Respond to started game with a word for the challenger, and start the game if valid.
-    pub fn respond(&mut self, word: String) -> bool {
+    // Includes challenger ID as a sanity check.
+    pub fn respond(&mut self, word: String, id: UserId) -> CmdResult<()> {
         if !matches!(self.progress, GameProgress::Waiting) {
-            return false;
+            return Err(CmdError::GameStarted(true));
         }
         if word.len() != self.get_word_length() {
-            return false;
+            return Err(CmdError::BadWordLength(word.len()));
+        }
+        if id != self.side[1].id {
+            return Err(CmdError::BadAccept);
         }
         self.side[0].baseword = word;
         self.progress = GameProgress::Started;
         self.start = Instant::now();
-        true
+        Ok(())
     }
 
     fn calculate_scores(&mut self) {
@@ -104,7 +109,7 @@ impl GameMP {
         }
     }
     // Send a guess as player number `index`.
-    // Returns true if accepted. Adjusts progress.
+    // Returns true if accepted (which is not an error). Adjusts progress.
     pub fn send_guess(&mut self, index: usize, guess: String) -> bool {
         if index >= PLAYER_CAP || self.get_word_length() != guess.len() {
             return false;
@@ -254,7 +259,7 @@ mod test {
         assert!(matches!(game.match_user(UserId(1012)), None));
 
         assert!(matches!(game.get_progress(), GameProgress::Waiting));
-        game.respond("slide".to_string());
+        game.respond("slide".to_string(), u2).unwrap();
         assert!(matches!(game.get_progress(), GameProgress::Started));
 
         assert_eq!(game.send_guess(0, "tower".to_string()), true);

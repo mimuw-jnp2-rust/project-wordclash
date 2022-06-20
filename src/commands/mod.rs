@@ -1,4 +1,4 @@
 pub mod dict;
 pub mod misc;
 pub mod mpgame;
-mod util;
+pub mod util;
