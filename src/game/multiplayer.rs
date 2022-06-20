@@ -304,7 +304,7 @@ mod test {
         let u2 = UserId(1_800_434_2637);
         let mut game = GameMP::create(u1, u2, "ounce".to_string());
         assert!(matches!(game.get_progress(), GameProgress::Waiting));
-        game.respond("scout".to_string());
+        game.respond("scout".to_string(), u2).unwrap();
         assert!(matches!(game.get_progress(), GameProgress::Started));
         let view1 = game.render_views(constants::WORDUEL_VIEWSEP);
 

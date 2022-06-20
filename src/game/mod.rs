@@ -15,7 +15,7 @@ pub struct Invite {
 
 // Per-player data
 pub struct PlayerData {
-    pub timed_game: ActiveGame,
+    pub timed_game: Option<UserId>,
     timed_challenges: HashSet<UserId>,
     pub turn_games: HashSet<UserId>,
     turn_challenges: HashSet<UserId>,
@@ -24,7 +24,7 @@ pub struct PlayerData {
 impl PlayerData {
     pub fn new() -> PlayerData {
         PlayerData {
-            timed_game: ActiveGame::None,
+            timed_game: None,
             timed_challenges: HashSet::new(),
             turn_games: HashSet::new(),
             turn_challenges: HashSet::new(),
@@ -43,10 +43,10 @@ impl PlayerData {
 
     pub fn accept_timed(&mut self, id: UserId) -> Option<bool> {
         self.timed_challenges.get(&id).map(|c| {
-            if !matches!(self.timed_game, ActiveGame::None) {
+            if self.timed_game.is_some() {
                 return false;
             }
-            self.timed_game = ActiveGame::Multiplayer(id);
+            self.timed_game = Some(id);
             true
         })
     }
@@ -70,7 +70,4 @@ impl PlayerData {
     }
 }
 
-pub enum ActiveGame {
-    None,
-    Multiplayer(UserId),
-}
+pub type GameId = u64;

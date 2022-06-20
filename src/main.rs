@@ -1,10 +1,8 @@
 use poise::serenity_prelude as serenity;
-use serenity::UserId;
 use std::collections::HashMap;
 use tokio::sync::RwLock as TokioRwLock;
-use data::*;
+pub use data::*;
 
-use std::collections::HashSet;
 use std::env;
 
 mod commands;
@@ -16,12 +14,6 @@ mod data;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, CtxData, Error>;
-
-pub struct CtxData {
-    dict: HashSet<String>, // immutable
-    mpgames: TokioRwLock<HashMap<UserId, game::GameMP>>,
-    userdata: TokioRwLock<HashMap<UserId, UserData>>,
-}
 
 const TOKEN_VARNAME: &str = "DISCORD_TOKEN";
 

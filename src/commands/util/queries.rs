@@ -27,9 +27,6 @@ pub fn ensure_word(d: &dict::Dictionary, s: &str) -> CmdResult<String> {
  */
 pub fn unwrap_game_id(userdata: Option<&mut UserData>) -> CmdResult<(&mut UserData, serenity::UserId)> {
     userdata.and_then(|udata| {
-        match udata.player.timed_game {
-            game::ActiveGame::Multiplayer(gid) => Some((udata, gid)),
-            _ => None
-        }
-    }).map_or(Err(CmdError::NoGame), Ok)
+        udata.player.timed_game.map(|gid| (udata, gid))
+    }).ok_or(CmdError::NoGame)
 }
