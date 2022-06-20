@@ -1,7 +1,7 @@
 use crate::constants;
 use crate::game::*;
 use crate::{Context, Error};
-use crate::users::*;
+use crate::data::*;
 use poise::serenity_prelude as serenity;
 use super::util::*;
 use std::fmt::Write;

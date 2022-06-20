@@ -2,7 +2,7 @@ use poise::serenity_prelude as serenity;
 use serenity::UserId;
 use std::collections::HashMap;
 use tokio::sync::RwLock as TokioRwLock;
-use users::*;
+use data::*;
 
 use std::collections::HashSet;
 use std::env;
@@ -11,7 +11,7 @@ mod commands;
 mod constants;
 mod dict;
 mod game;
-mod users;
+mod data;
 // use serde::{Deserialize, Serialize};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
