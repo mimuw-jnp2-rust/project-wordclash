@@ -32,26 +32,28 @@ pub async fn worduel_challenge(
     }
 
     let mut mplock = ctx.data().mpgames.write().await;
-    {
+    let game_id = {
         // Own data scope
         let userdata1 = udlock.entry(own_id).or_insert_with(UserData::new);
         if userdata1.player.timed_game.is_some() {
             return Err(CmdError::SelfInGame.into());
         }
+        let game_id = ctx.data().pull_gameid();
         mplock.insert(
-            own_id,
+            game_id,
             GameMP::create(own_id, other_id, word.to_lowercase()),
         );
-        userdata1.player.timed_game = Some(own_id);
-    }
+        userdata1.player.timed_game = Some(game_id);
+        game_id
+    };
     // Access opponent data
     udlock
         .entry(other_id)
         .or_insert_with(UserData::new)
         .player
-        .timed_game = Some(own_id);
+        .timed_game = Some(game_id);
 
-    let gamedata = mplock.get(&own_id).unwrap(); // why wouldn't it exist?
+    let gamedata = mplock.get(&game_id).unwrap(); // why wouldn't it exist?
 
     ctx.channel_id().send_message(&ctx.discord().http, |m| {
         m.content(
@@ -88,24 +90,26 @@ pub async fn worduel_accept(
     let own_id = ctx.author().id;
     let mut udlock = ctx.data().userdata.write().await;
 
-    let (userdata, other_id) = queries::unwrap_game_id(udlock.get_mut(&own_id))?;
-
-    let other_user = other_id.to_user(&ctx.discord().http).await?;
+    let (userdata, game_id) = queries::unwrap_game_id(udlock.get_mut(&own_id))?;
 
     let mut mplock = ctx.data().mpgames.write().await;
-    let gamedata = mplock.get_mut(&other_id).ok_or_else(|| {
+    let gamedata = mplock.get_mut(&game_id).ok_or_else(|| {
         userdata.player.timed_game = None;
         CmdError::GameDeleted
     })?;
     if gamedata.get_word_length() != word.len() {
         return Err(CmdError::BadWordLength(word.len()).into());
     }
+
+    let other_user = gamedata.get_user_id(0);
     gamedata.respond(word, own_id)?;
 
     ctx.channel_id().send_message(&ctx.discord().http, |m| {
         m.content(
             serenity::MessageBuilder::new()
-                .push("Challenge accepted, ")
+                .push("Your challenge has been accepted by")
+                .push(&ctx.author().name)
+                .push(", ")
                 .user(other_user)
                 .push("!")
                 .build()
@@ -245,10 +249,7 @@ pub async fn worduel_forfeit(
     let mut udlock = ctx.data().userdata.write().await;
     let mut mplock = ctx.data().mpgames.write().await;
 
-    let user_unwrapped = match user {
-        None => return Err(CmdError::ForfeitBadUser.into()),
-        Some(u) => u,
-    };
+    let user_unwrapped = user.ok_or(CmdError::ForfeitBadUser)?;
 
     let (stateline, content, views, game_id, other_id) = {
         let (userdata, game_id) = queries::unwrap_game_id(udlock.get_mut(&own_id))?;
@@ -331,7 +332,7 @@ pub async fn worduel_keyboard(ctx: Context<'_>) -> Result<(), Error> {
         userdata.player.timed_game = None;
         CmdError::GameDeleted
     })?;
-    let player_index = gamedata.match_user(game_id).unwrap();
+    let player_index = gamedata.match_user(own_id).unwrap();
 
     let keyboard = gamedata.render_keyboard(player_index);
 

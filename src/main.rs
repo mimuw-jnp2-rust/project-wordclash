@@ -1,6 +1,8 @@
 use poise::serenity_prelude as serenity;
 use std::collections::HashMap;
 use tokio::sync::RwLock as TokioRwLock;
+use std::sync::RwLock;
+use rand::prelude::*;
 pub use data::*;
 
 use std::env;
@@ -71,11 +73,9 @@ async fn main() {
         .token(env::var(TOKEN_VARNAME).expect(&token_errstr))
         .user_data_setup(move |_ctx, _ready, _fw| {
             Box::pin(async move {
-                Ok(CtxData {
-                    dict: dict::load_dictionary().await,
-                    mpgames: TokioRwLock::new(HashMap::new()),
-                    userdata: TokioRwLock::new(HashMap::new()),
-                })
+                Ok(CtxData::new(
+                    dict::load_dictionary().await,
+                ))
             })
         })
         .options(options)
