@@ -1,8 +1,4 @@
 use poise::serenity_prelude as serenity;
-use std::collections::HashMap;
-use tokio::sync::RwLock as TokioRwLock;
-use std::sync::RwLock;
-use rand::prelude::*;
 pub use data::*;
 
 use std::env;
@@ -74,7 +70,7 @@ async fn main() {
         .user_data_setup(move |_ctx, _ready, _fw| {
             Box::pin(async move {
                 Ok(CtxData::new(
-                    dict::load_dictionary().await,
+                    dict::load_dictionary(),
                 ))
             })
         })

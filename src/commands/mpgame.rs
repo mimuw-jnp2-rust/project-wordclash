@@ -41,7 +41,7 @@ pub async fn worduel_challenge(
         let game_id = ctx.data().pull_gameid();
         mplock.insert(
             game_id,
-            GameMP::create(own_id, other_id, word.to_lowercase()),
+            GameMP::create(own_id, other_id, word.to_lowercase(), multiplayer::GameVariant::Timed),
         );
         userdata1.player.timed_game = Some(game_id);
         game_id
