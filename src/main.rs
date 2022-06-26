@@ -57,6 +57,12 @@ async fn main() {
             commands::timedgame::send(),
             commands::timedgame::forfeit(),
             commands::timedgame::keyboard(),
+            commands::turngame::challenge(),
+            commands::turngame::accept(),
+            commands::turngame::send(),
+            commands::turngame::remind(),
+            commands::turngame::forfeit(),
+            commands::turngame::keyboard(),
             commands::misc::roll_dice(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {

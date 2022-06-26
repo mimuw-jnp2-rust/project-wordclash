@@ -137,4 +137,33 @@ impl CtxData {
         }
         res
     }
+    
+    // Perform a function on an active (caller-bound) turn-based game. 
+    // Takes a function which has to take four parameters:
+    // - userdata, game_id, gamedata: obvious
+    // - remove: function to call if the game is to be removed
+    pub async fn act_on_turnbased<T, F: FnOnce(&mut UserData, GameId, &mut GameMP, &mut dyn FnMut())-> CmdResult<T>> (&self,
+        own_id: UserId, enemy_id: UserId, f: F
+    ) -> CmdResult<T> {
+        let mut udlock = self.userdata.write().await;
+        let mut mplock = self.mpgames.write().await;
+
+        let (userdata, game_id) = queries::unwrap_turngame_id(udlock.get_mut(&own_id), enemy_id)?;
+
+        let gamedata = mplock.get_mut(&game_id).ok_or_else(|| {
+            userdata.player.turn_games.remove(&enemy_id);
+            CmdError::GameDeleted
+        })?;
+
+        let mut should_remove = false;
+        let res = f(userdata, game_id, gamedata, &mut || {should_remove = true;});
+        if should_remove {
+            mplock.remove(&game_id);
+            userdata.player.turn_games.remove(&enemy_id);
+            if let Some(udata2) = udlock.get_mut(&enemy_id) {
+                udata2.player.turn_games.remove(&own_id);
+            }
+        }
+        res
+    }
 }

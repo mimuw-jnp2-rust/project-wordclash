@@ -109,7 +109,7 @@ impl GameMP {
             } else {
                 self.score[i] = match self.variant {
                     GameVariant::Timed => self.side[i].calculate_timed_score(secscores[i], self.max_guesses),
-                    GameVariant::TurnBased => self.side[i].calculate_turn_score(self.max_guesses),
+                    GameVariant::TurnBased => self.side[i].calculate_turn_score(self.max_guesses, self.get_word_length()),
                 };
             }
         }

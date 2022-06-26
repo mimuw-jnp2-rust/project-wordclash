@@ -6,6 +6,7 @@ use super::errors::{CmdError, CmdResult};
 use crate::constants;
 use crate::dict;
 use crate::UserData;
+use poise::serenity_prelude as serenity;
 use crate::game;
 
 /**
@@ -44,5 +45,14 @@ pub fn ensure_word(d: &dict::Dictionary, s: &str) -> CmdResult<String> {
 pub fn unwrap_timedgame_id(userdata: Option<&mut UserData>) -> CmdResult<(&mut UserData, game::GameId)> {
     userdata.and_then(|udata| {
         udata.player.timed_game.map(|gid| (udata, gid))
+    }).ok_or(CmdError::NoGame)
+}
+
+/**
+ * Extract user data of own user and ID of game owner from get_mut, assuming the user is in a game.
+ */
+pub fn unwrap_turngame_id(userdata: Option<&mut UserData>, userid: serenity::UserId) -> CmdResult<(&mut UserData, game::GameId)> {
+    userdata.and_then(|udata| {
+        udata.player.turn_games.get(&userid).map(|gid| (udata, *gid))
     }).ok_or(CmdError::NoGame)
 }
