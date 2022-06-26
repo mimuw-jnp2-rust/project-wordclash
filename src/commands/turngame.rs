@@ -168,7 +168,7 @@ pub async fn send(
             e.title("Worduel status")
                 .field("Game state", stateline, true)
                 .color((255, 204, 11))
-                .description(format!("```\n{}\n```", views))
+                .description(views)
         }).ephemeral(false)
     })
     .await?;
@@ -198,7 +198,7 @@ pub async fn remind(
             e.title("Worduel status")
                 .field("Game state", stateline, true)
                 .color((255, 204, 11))
-                .description(format!("```\n{}\n```", views))
+                .description(views)
         })
     })
     .await?;
@@ -236,7 +236,7 @@ pub async fn forfeit(
             e.title("Worduel status before forfeit")
                 .field("Last game state", stateline, true)
                 .color((255, 204, 11))
-                .description(format!("```\n{}\n```", views))
+                .description(views)
         }).ephemeral(false)
     })
     .await?;
