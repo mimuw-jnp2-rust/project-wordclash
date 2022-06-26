@@ -16,10 +16,14 @@ pub async fn worduel_challenge_timed(
 ) -> Result<(), Error> {
     let word = queries::ensure_word(&ctx.data().dict, &word)?;
 
-    let game_id = ctx.data().challenge_player(ctx.author().id, user.id, word, GameVariant::Timed).await?;
+    let game_id = ctx.data().challenge_player(
+        ctx.author().id, user.id, word.clone(), GameVariant::Timed
+    ).await?;
 
     let mplock = ctx.data().mpgames.read().await;
     let gamedata = mplock.get(&game_id).unwrap(); // why wouldn't it exist?
+
+    ctx.say(format!("Created game with word: {}", word)).await?;
 
     ctx.channel_id().send_message(&ctx.discord().http, |m| {
         m.content(
@@ -54,7 +58,9 @@ pub async fn worduel_accept_timed(
 ) -> Result<(), Error> {
     let word = queries::ensure_word(&ctx.data().dict, &word)?;
 
-    ctx.data().accept_invite(ctx.author().id, user.id, word, GameVariant::Timed).await?;
+    ctx.data().accept_invite(ctx.author().id, user.id, word.clone(), GameVariant::Timed).await?;
+
+    ctx.say(format!("Responded to game with word: {}", word)).await?;
 
     ctx.channel_id().send_message(&ctx.discord().http, |m| {
         m.content(
@@ -84,70 +90,53 @@ pub async fn worduel_send_timed(
     let word = queries::ensure_word(&ctx.data().dict, &word)?;
 
     let own_id = ctx.author().id;
-    let mut udlock = ctx.data().userdata.write().await;
-    let mut mplock = ctx.data().mpgames.write().await;
 
-    let (progress, stateline, content, views, game_id, other_id) = {
-        let (userdata, game_id) = queries::unwrap_timedgame_id(udlock.get_mut(&own_id))?;
+    let (stateline, content, views) = 
+        ctx.data().act_on_timed(own_id, |_ud, _gid, gamedata, remove| {
+            use multiplayer::GameProgress::*;
 
-        let gamedata = mplock.get_mut(&game_id).ok_or_else(|| {
-            userdata.player.timed_game = None;
-            CmdError::GameDeleted
-        })?;
-
-        // If we got gamedata, this should REALLY not be None.
-        let player_index = gamedata.match_user(own_id).unwrap();
-        let enemy_id = gamedata.get_user_id(1 - player_index);
-
-        use multiplayer::GameProgress::*;
-        if matches!(gamedata.get_progress(), Waiting) {
-            return Err(CmdError::GameStarted(false).into());
-        }
-
-        let success = gamedata.send_guess(player_index, word.to_lowercase());
-        let progress = gamedata.get_progress().clone();
-
-        let views = gamedata.render_views(constants::WORDUEL_VIEWSEP);
-
-        let mut content = serenity::MessageBuilder::new();
-        match progress {
-            Over(Some(i)) => content
-                .push("Game over, ")
-                .user(enemy_id)
-                .push(", the victor is ")
-                .user(gamedata.get_user_id(i))
-                .push("!"),
-            Over(None) => content
-                .push("Game over, ")
-                .user(enemy_id)
-                .push(", this duel ended in a draw."),
-            _ => {
-                if success {
-                    content.push("Word has been sent!")
-                } else {
-                    content.push("Word rejected, wait for the other side to finish.")
-                }
+            if matches!(gamedata.get_progress(), multiplayer::GameProgress::Waiting) {
+                return Err(CmdError::GameStarted(false).into());
             }
-        };
-        (
-            progress,
-            gamedata.render_stateline(true),
-            content.build(),
-            views,
-            game_id,
-            enemy_id,
-        )
-    };
+            let player_index = gamedata.match_user(own_id).unwrap();
+            let enemy_id = gamedata.get_user_id(1-player_index);
 
-    if matches!(progress, multiplayer::GameProgress::Over(_)) {
-        mplock.remove(&game_id);
-        if let Some(udata) = udlock.get_mut(&own_id) {
-            udata.player.timed_game = None;
-        }
-        if let Some(udata2) = udlock.get_mut(&other_id) {
-            udata2.player.timed_game = None;
-        }
-    }
+            let success = gamedata.send_guess(player_index, word.to_lowercase());
+            let progress = gamedata.get_progress().clone();
+
+            let views = gamedata.render_views(constants::WORDUEL_VIEWSEP);
+
+            let mut content = serenity::MessageBuilder::new();
+            match progress {
+                Over(res) => {
+                    remove();
+                    match res {
+                        Some(i) => content
+                            .push("Game over, ")
+                            .user(enemy_id)
+                            .push(", the victor is ")
+                            .user(gamedata.get_user_id(i))
+                            .push("!"),
+                        None => content
+                            .push("Game over, ")
+                            .user(enemy_id)
+                            .push(", this duel ended in a draw."),
+                    }
+                },
+                _ => {
+                    if success {
+                        content.push("Word has been sent!")
+                    } else {
+                        content.push("Word rejected, wait for the other side to finish.")
+                    }
+                }
+            };
+            Ok((
+                gamedata.render_stateline(true),
+                content.build(),
+                views,
+            ))
+        }).await?;
 
     ctx.send(|m| {
         m.content(content).embed(|e| {
@@ -172,18 +161,9 @@ pub async fn worduel_forfeit_timed(
     #[description = "Enemy username"] user: Option<serenity::User>,
 ) -> Result<(), Error> {
     let own_id = ctx.author().id;
-    let mut udlock = ctx.data().userdata.write().await;
-    let mut mplock = ctx.data().mpgames.write().await;
-
     let user_unwrapped = user.ok_or(CmdError::ForfeitBadUser)?;
 
-    let (stateline, content, views, game_id, other_id) = {
-        let (userdata, game_id) = queries::unwrap_timedgame_id(udlock.get_mut(&own_id))?;
-
-        let gamedata = mplock.get_mut(&game_id).ok_or_else(|| {
-            userdata.player.timed_game = None;
-            CmdError::GameDeleted
-        })?;
+    let (stateline, content, views) = ctx.data().act_on_timed(own_id, |_, _, gamedata, remove| {
         let player_index = gamedata.match_user(own_id).unwrap();
         let enemy_id = gamedata.get_user_id(1 - player_index);
 
@@ -192,12 +172,10 @@ pub async fn worduel_forfeit_timed(
         }
 
         use multiplayer::GameProgress::*;
-        let progress = gamedata.get_progress().clone();
-
         let views = gamedata.render_views(constants::WORDUEL_VIEWSEP);
 
         let mut content = serenity::MessageBuilder::new();
-        match progress {
+        match gamedata.get_progress() {
             Waiting => content
                 .user(enemy_id)
                 .push(", your invitation has been rejected."),
@@ -205,14 +183,9 @@ pub async fn worduel_forfeit_timed(
                 .user(enemy_id)
                 .push(", your opponent has forfeited this game."),
         };
-        userdata.player.timed_game = None;
-        (gamedata.render_stateline(false), content.build(), views, game_id, enemy_id)
-    };
-
-    mplock.remove(&game_id);
-    if let Some(udata2) = udlock.get_mut(&other_id) {
-        udata2.player.timed_game = None;
-    }
+        remove();
+        Ok((gamedata.render_stateline(false), content.build(), views))
+    }).await?;
 
     ctx.send(|m| {
         m.content(content).embed(|e| {

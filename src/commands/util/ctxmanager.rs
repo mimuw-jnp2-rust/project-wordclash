@@ -3,6 +3,7 @@ use serenity::UserId;
 use crate::constants;
 use crate::game::*;
 use crate::data::*;
+use super::queries;
 use std::time::SystemTime;
 use super::{CmdError, CmdResult};
 
@@ -85,5 +86,38 @@ impl CtxData {
         }
         gamedata.respond(word, own_id)?;
         Ok(game_id)
+    }
+    
+    // Perform a function on an active (caller-bound) timed game. 
+    // Takes a function which has to take four parameters:
+    // - userdata, game_id, gamedata: obvious
+    // - remove: function to call if the game is to be removed
+    pub async fn act_on_timed<T, F: FnOnce(&mut UserData, GameId, &mut GameMP, &mut dyn FnMut())-> CmdResult<T>> (&self,
+        own_id: UserId, f: F
+    ) -> CmdResult<T> {
+        let mut udlock = self.userdata.write().await;
+        let mut mplock = self.mpgames.write().await;
+
+        let (userdata, game_id) = queries::unwrap_timedgame_id(udlock.get_mut(&own_id))?;
+
+        let gamedata = mplock.get_mut(&game_id).ok_or_else(|| {
+            userdata.player.timed_game = None;
+            CmdError::GameDeleted
+        })?;
+
+        // If we got gamedata, this should REALLY not be None.
+        let player_index = gamedata.match_user(own_id).unwrap();
+        let enemy_id = gamedata.get_user_id(1 - player_index);
+
+        let mut should_remove = false;
+        let res = f(userdata, game_id, gamedata, &mut || {should_remove = true;});
+        if should_remove {
+            mplock.remove(&game_id);
+            userdata.player.timed_game = None;
+            if let Some(udata2) = udlock.get_mut(&enemy_id) {
+                udata2.player.timed_game = None;
+            }
+        }
+        res
     }
 }
