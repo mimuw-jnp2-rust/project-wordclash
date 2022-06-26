@@ -156,7 +156,7 @@ pub async fn worduel_send(
             e.title("Worduel status")
                 .field("Game state", stateline, true)
                 .color((255, 204, 11))
-                .description(format!("```\n{}\n```", views))
+                .description(format!("\n{}\n", views))
         }).ephemeral(false)
     })
     .await?;

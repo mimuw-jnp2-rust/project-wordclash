@@ -185,6 +185,41 @@ impl GameMP {
         }
         out
     }
+
+    pub fn render_view_color(&self, index: usize) -> String {
+        let mut out = String::with_capacity(self.max_guesses * EMOJI_WIDTH * self.get_word_length() * 2);
+        let empty_line: String = (0..self.get_word_length()).map(|_| ":white_large_square:").collect();
+        let side = &self.side[index];
+
+        for i in 0..self.max_guesses {
+            if let Some(row) = side.guesses.get(i) {
+                let mut l_out = String::with_capacity(EMOJI_WIDTH * self.get_word_length());
+                let mut a_out = String::with_capacity(EMOJI_WIDTH * self.get_word_length());
+                row.0.chars().zip(row.1.iter()).for_each(|(c, m)| {
+                    use MatchLetter::*;
+                    let l_str = format!(":regional_indicator_{}", c);
+                    l_out.push_str(&l_str);
+                    let a_str = match m {
+                        Null => format!(" {} ", c).to_uppercase(),
+                        Close => format!(":{}:", c).to_uppercase(),
+                        Exact => format!("[{}]", c).to_uppercase(),
+                    };
+                    a_out.push_str(&a_str);
+                });
+                out.push_str(&l_out);
+                out.push('\n');
+                out.push_str(&a_out);
+            } else {
+                out.push_str(&empty_line);
+                out.push('\n');
+                out.push_str(&empty_line);
+            }
+            if i + 1 < self.max_guesses {
+                out.push('\n');
+            }
+        }
+        out
+    }
     
     pub fn render_stateline(&self, want_scores: bool) -> String {
         let mut state = serenity::MessageBuilder::new();
@@ -245,7 +280,7 @@ impl GameMP {
 
     // Render views side by side, separated with `separator`.
     pub fn render_views(&self, separator: &str) -> String {
-        self.render_view(0)
+        self.render_view_color(0)
             .split('\n')
             .zip(self.render_view(1).split('\n'))
             .map(|(a, b)| [a, b].join(separator))
