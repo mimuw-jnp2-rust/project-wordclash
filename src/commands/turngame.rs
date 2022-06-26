@@ -88,7 +88,7 @@ pub async fn reject(
     let game = ctx.data().reject_invite(ctx.author().id, user.id, GameVariant::TurnBased).await?;
 
     ctx.say(match game {
-        None => "Rejected invite, game void",
+        None => "Rejected invite, game void".to_string(),
         Some(g) => format!("Rejected invite, word was: {}", g.get_baseword(1))
     }).await?;
 
@@ -184,9 +184,7 @@ pub async fn remind(
     let own_id = ctx.author().id;
 
     let (stateline, views) = 
-        ctx.data().act_on_turnbased(own_id, user.id, |_ud, _gid, gamedata, remove| {
-            let progress = gamedata.get_progress().clone();
-
+        ctx.data().act_on_turnbased(own_id, user.id, |_, _, gamedata, _| {
             let views = gamedata.render_views(constants::WORDUEL_VIEWSEP);
 
             Ok((

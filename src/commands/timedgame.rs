@@ -88,7 +88,7 @@ pub async fn reject(
     let game = ctx.data().reject_invite(ctx.author().id, user.id, GameVariant::Timed).await?;
 
     ctx.say(match game {
-        None => "Rejected invite, game void",
+        None => "Rejected invite, game void".to_string(),
         Some(g) => format!("Rejected invite, word was: {}", g.get_baseword(1))
     }).await?;
 
