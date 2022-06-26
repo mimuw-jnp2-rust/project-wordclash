@@ -1,5 +1,6 @@
 pub mod errors;
 pub mod queries;
+pub mod ctxmanager;
 pub use errors::{
     CmdError,
     CmdResult

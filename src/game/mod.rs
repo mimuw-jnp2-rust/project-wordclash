@@ -5,7 +5,7 @@ pub use side::GameSide;
 pub mod multiplayer;
 pub use multiplayer::GameMP;
 use poise::serenity_prelude::UserId;
-use std::collections::{HashSet, HashMap};
+use std::collections::HashMap;
 use std::sync::atomic;
 use std::time;
 
@@ -17,6 +17,13 @@ pub struct Invite {
     pub expiry: time::SystemTime,
     pub game: GameId,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub enum GameVariant {
+    Timed,
+    TurnBased,
+}
+use GameVariant::*;
 
 // Per-player data
 pub struct PlayerData {
@@ -38,39 +45,55 @@ impl PlayerData {
 
     // Inserts the invite if no invite is waiting from this user.
     // Else swaps out the existing invite..
-    pub fn invite_timed(&mut self, id: UserId, invite: Invite) {
-        todo!()
+    pub fn invite(&mut self, variant: GameVariant, id: UserId, invite: Invite) {
+        match variant {
+            Timed => {self.timed_challenges.insert(id, invite);},
+            TurnBased => {self.turn_challenges.insert(id, invite);},
+        };
     }
 
-    pub fn list_timed(&self) -> &HashMap<UserId, Invite> {
-        &self.timed_challenges
+    pub fn list(&self, variant: GameVariant) -> &HashMap<UserId, Invite> {
+        match variant {
+            Timed => &self.timed_challenges,
+            TurnBased => &self.turn_challenges,
+        }
+    }
+    
+    /**
+     * Remove an invitation of the given variant.
+     * Returns it if found.
+     */
+    pub fn remove_invite(&mut self, variant: GameVariant, id: UserId) -> Option<Invite> {
+        match variant {
+            Timed => self.timed_challenges,
+            TurnBased => self.turn_challenges,
+        }.remove(&id)
     }
 
-    pub fn accept_timed(&mut self, id: UserId) -> Option<bool> {
-        self.timed_challenges.get(&id).map(|c| {
-            if self.timed_game.is_some() {
-                return false;
-            }
-            self.timed_game = Some(c.game);
-            true
+    // Returns None if no challenge from this user exists,
+    // Some(false) if the challenge cannot be accepted,
+    // Some(true) if it has been accepted.
+    pub fn accept(&self, variant: GameVariant, id: UserId) -> Option<bool> {
+        self.remove_invite(variant, id).map(|i| match variant {
+            Timed => {
+                if self.timed_game.is_some() {
+                    return false;
+                }
+                self.timed_game = Some(i.game);
+                true
+            },
+            TurnBased => {
+                if self.turn_games.contains_key(&id) {
+                    return false;
+                }
+                self.turn_games.insert(id, i.game);
+                true
+            },
         })
     }
     
-    pub fn invite_turn(&mut self, id: UserId, invite: Invite) -> bool {
-        !self.turn_games.contains_key(&id) && {
-            self.turn_challenges.insert(id, invite);
-            true
-        }
-    }
-
-    pub fn list_turn(&self, id: UserId) -> &HashMap<UserId, Invite> {
-        &self.turn_challenges
-    }
-
-    pub fn accept_turn(&mut self, id: UserId) -> Option<bool> {
-        self.turn_challenges.get(&id).map(|c| {
-            self.turn_games.insert(id, c.game);
-            true
-        })
+    pub fn clean_invites(&mut self, before: time::SystemTime) {
+        self.timed_challenges.retain(|_, v| v.expiry > before);
+        self.turn_challenges.retain(|_, v| v.expiry > before);
     }
 }

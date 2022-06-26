@@ -5,10 +5,11 @@ use serenity::UserId;
 use std::time::Instant;
 
 use super::side::GameSide;
+use super::GameVariant;
 
 // Game progress
 // Used to remember whether a game has started and whether it's over
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum GameProgress {
     Waiting,
     Started,
@@ -24,6 +25,7 @@ pub struct GameMP {
     progress: GameProgress,
     score: [u64; 2],
     max_guesses: usize,
+    variant: GameVariant,
 }
 
 const PLAYER_CAP: usize = 2;
@@ -32,7 +34,7 @@ const ALPHA_LENGTH: usize = 26;
 
 impl GameMP {
     // Start of a game.
-    pub fn create(id_self: UserId, id_challenged: UserId, word: String) -> GameMP {
+    pub fn create(id_self: UserId, id_challenged: UserId, word: String, variant: GameVariant) -> GameMP {
         let mut out = GameMP {
             side: [GameSide::with_id(id_self), GameSide::with_id(id_challenged)],
             start: Instant::now(),
@@ -40,6 +42,7 @@ impl GameMP {
             progress: GameProgress::Waiting,
             score: [0, 0],
             max_guesses: word.len() + 1,
+            variant
         };
         out.side[1].baseword = word;
 
@@ -104,7 +107,10 @@ impl GameMP {
             if !victory[i] {
                 self.score[i] = 0;
             } else {
-                self.score[i] = self.side[i].calculate_score(secscores[i], self.max_guesses);
+                self.score[i] = match self.variant {
+                    GameVariant::Timed => self.side[i].calculate_timed_score(secscores[i], self.max_guesses),
+                    GameVariant::TurnBased => self.side[i].calculate_turn_score(self.max_guesses),
+                };
             }
         }
     }
@@ -178,6 +184,37 @@ impl GameMP {
             }
         }
         out
+    }
+    
+    pub fn render_stateline(&self, want_scores: bool) -> String {
+        let mut state = serenity::MessageBuilder::new();
+        use GameProgress::*;
+        match self.progress {
+            Waiting => state.push("Waiting"),
+            Started => state.push("Both players active, game in progress"),
+            Ending(i) => state
+                .push("Player ")
+                .push(i.to_string())
+                .push(" finished in ")
+                .push(
+                    self
+                        .get_end(i)
+                        .map(|e| format!("{} seconds", (e - self.get_start()).as_secs()))
+                        .unwrap_or_else(|| "some time".to_string()),
+                )
+                .push(", game in progress"),
+            Over(None) => state.push("Game over (draw)"),
+            Over(Some(i)) => {
+                let id = self.get_user_id(i);
+                let scores = self.get_score();
+                state.push("Game over");
+                if want_scores {
+                    state.push("(winner: ").user(id);
+                    write!(state.0, ", score: {}:{})", scores[i], scores[1 - i]).unwrap();
+                }
+                &mut state
+            }
+        }.build()
     }
 
     pub fn render_keyboard(&self, index: usize) -> String {
@@ -253,7 +290,7 @@ mod test {
     fn basic_game() {
         let u1 = UserId(1011);
         let u2 = UserId(1013);
-        let mut game = GameMP::create(u1, u2, "north".to_string());
+        let mut game = GameMP::create(u1, u2, "north".to_string(), GameVariant::Timed);
         assert!(matches!(game.match_user(u2), Some(1)));
         assert!(matches!(game.match_user(u1), Some(0)));
         assert!(matches!(game.match_user(UserId(1012)), None));
@@ -302,7 +339,7 @@ mod test {
     fn rejections() {
         let u1 = UserId(118_999_881_999_119_7253);
         let u2 = UserId(1_800_434_2637);
-        let mut game = GameMP::create(u1, u2, "ounce".to_string());
+        let mut game = GameMP::create(u1, u2, "ounce".to_string(), GameVariant::Timed);
         assert!(matches!(game.get_progress(), GameProgress::Waiting));
         game.respond("scout".to_string(), u2).unwrap();
         assert!(matches!(game.get_progress(), GameProgress::Started));

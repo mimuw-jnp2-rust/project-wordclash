@@ -41,7 +41,7 @@ pub fn ensure_word(d: &dict::Dictionary, s: &str) -> CmdResult<String> {
 /**
  * Extract user data of own user and ID of game owner from get_mut, assuming the user is in a game.
  */
-pub fn unwrap_game_id(userdata: Option<&mut UserData>) -> CmdResult<(&mut UserData, game::GameId)> {
+pub fn unwrap_timedgame_id(userdata: Option<&mut UserData>) -> CmdResult<(&mut UserData, game::GameId)> {
     userdata.and_then(|udata| {
         udata.player.timed_game.map(|gid| (udata, gid))
     }).ok_or(CmdError::NoGame)
