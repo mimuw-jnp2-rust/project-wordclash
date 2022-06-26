@@ -8,6 +8,7 @@ use super::util::*;
 ///
 /// Supplied word must be within reasonable length bounds
 /// and appear in the dictionary.
+/// Alternatively, if it's an integer, a random word of that length will be chosen.
 #[poise::command(slash_command, category = "Worduel", rename = "wd_challenge", ephemeral)]
 pub async fn challenge(
     ctx: Context<'_>,
@@ -50,6 +51,7 @@ pub async fn challenge(
 /// Accept a Worduel invitation
 ///
 /// The word you specify will be what the inviter has to guess.
+/// Same rules as for challenges.
 #[poise::command(slash_command, category = "Worduel", rename = "wd_accept", ephemeral)]
 pub async fn accept(
     ctx: Context<'_>,
@@ -178,7 +180,6 @@ pub async fn send(
 
 /// Forfeit from a Worduel
 ///
-/// Can also be used to reject invitations.
 /// To make sure you don't accidentally forfeit,
 /// you have to specify the enemy's tag in the command invocation.
 #[poise::command(slash_command, category = "Worduel", rename = "wd_forfeit", ephemeral)]
