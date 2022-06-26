@@ -93,11 +93,9 @@ pub async fn reject(
     ctx.channel_id().send_message(&ctx.discord().http, |m| {
         m.content(
             serenity::MessageBuilder::new()
-                .push("Your challenge has been accepted by ")
-                .push(&ctx.author().name)
-                .push(", ")
-                .user(user.id)
-                .push("!")
+                .push("Your challenge to ")
+                .user(ctx.author().id)
+                .push(" has been rejected.")
                 .build()
         )
     })
