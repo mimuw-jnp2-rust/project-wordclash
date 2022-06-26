@@ -188,7 +188,8 @@ impl GameMP {
 
     pub fn render_view_color(&self, index: usize) -> String {
         let mut out = String::with_capacity(self.max_guesses * EMOJI_WIDTH * self.get_word_length() * 2);
-        let empty_line: String = (0..self.get_word_length()).map(|_| ":white_large_square:").collect();
+        let white_line: String = (0..self.get_word_length()).map(|_| ":white_large_square:").collect();
+        let black_line: String = (0..self.get_word_length()).map(|_| ":black_large_square:").collect();
         let side = &self.side[index];
 
         for i in 0..self.max_guesses {
@@ -209,9 +210,9 @@ impl GameMP {
                 out.push('\n');
                 out.push_str(&a_out);
             } else {
-                out.push_str(&empty_line);
+                out.push_str(&white_line);
                 out.push('\n');
-                out.push_str(&empty_line);
+                out.push_str(&black_line);
             }
             if i + 1 < self.max_guesses {
                 out.push('\n');
@@ -282,7 +283,7 @@ impl GameMP {
     pub fn render_views(&self, separator: &str) -> String {
         self.render_view_color(0)
             .split('\n')
-            .zip(self.render_view(1).split('\n'))
+            .zip(self.render_view_color(1).split('\n'))
             .map(|(a, b)| [a, b].join(separator))
             .collect::<Vec<_>>()
             .join("\n")
