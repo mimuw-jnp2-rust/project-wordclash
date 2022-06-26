@@ -195,16 +195,15 @@ impl GameMP {
             if let Some(row) = side.guesses.get(i) {
                 let mut l_out = String::with_capacity(EMOJI_WIDTH * self.get_word_length());
                 let mut a_out = String::with_capacity(EMOJI_WIDTH * self.get_word_length());
-                row.0.chars().zip(row.1.iter()).for_each(|(c, m)| {
-                    use MatchLetter::*;
-                    let l_str = format!(":regional_indicator_{}", c);
-                    l_out.push_str(&l_str);
-                    let a_str = match m {
-                        Null => format!(" {} ", c).to_uppercase(),
-                        Close => format!(":{}:", c).to_uppercase(),
-                        Exact => format!("[{}]", c).to_uppercase(),
-                    };
-                    a_out.push_str(&a_str);
+                use std::fmt::Write;
+                row.0.chars().for_each(|c| {
+                    write!(l_out, ":regional_indicator_{}:\u{200b}", c).unwrap();
+                });
+                use MatchLetter::*;
+                row.1.iter().for_each(|m| match m {
+                    Null => a_out.push_str(":black_large_square:"),
+                    Close => a_out.push_str(":yellow_square:"),
+                    Exact => a_out.push_str(":green_square:"),
                 });
                 out.push_str(&l_out);
                 out.push('\n');
