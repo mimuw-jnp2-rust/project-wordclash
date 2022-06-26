@@ -189,6 +189,7 @@ impl GameMP {
     pub fn render_stateline(&self, want_scores: bool) -> String {
         let mut state = serenity::MessageBuilder::new();
         use GameProgress::*;
+        use std::fmt::Write;
         match self.progress {
             Waiting => state.push("Waiting"),
             Started => state.push("Both players active, game in progress"),

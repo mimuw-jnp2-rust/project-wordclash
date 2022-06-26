@@ -1,4 +1,3 @@
-use crate::data::CtxData;
 use poise::serenity_prelude as serenity;
 use serenity::UserId;
 use crate::constants;
@@ -13,7 +12,7 @@ impl CtxData {
     ) -> CmdResult<GameId> {
         use GameVariant::*;
         if own_id == enemy_id {
-            return Err(CmdError::BadAccept);
+            return Err(CmdError::ChallengedSelf);
         }
 
         let mut udlock = self.userdata.write().await;
@@ -58,7 +57,7 @@ impl CtxData {
     ) -> CmdResult<GameId> {
         let mut udlock = self.userdata.write().await;
 
-        let mut userdata = udlock.entry(own_id).or_default();
+        let userdata = udlock.entry(own_id).or_default();
         if userdata.player.timed_game.is_some() {
             return Err(CmdError::SelfInGame.into());
         }

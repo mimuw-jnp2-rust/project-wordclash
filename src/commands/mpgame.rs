@@ -1,10 +1,8 @@
 use crate::constants;
 use crate::game::*;
 use crate::{Context, Error};
-use crate::data::*;
 use poise::serenity_prelude as serenity;
 use super::util::*;
-use std::time;
 
 /// Challenge an user to a timed Worduel
 ///

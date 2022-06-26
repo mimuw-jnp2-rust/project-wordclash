@@ -65,15 +65,15 @@ impl PlayerData {
      */
     pub fn remove_invite(&mut self, variant: GameVariant, id: UserId) -> Option<Invite> {
         match variant {
-            Timed => self.timed_challenges,
-            TurnBased => self.turn_challenges,
+            Timed => &mut self.timed_challenges,
+            TurnBased => &mut self.turn_challenges,
         }.remove(&id)
     }
 
     // Returns None if no challenge from this user exists,
     // Some(false) if the challenge cannot be accepted,
     // Some(true) if it has been accepted.
-    pub fn accept(&self, variant: GameVariant, id: UserId) -> Option<bool> {
+    pub fn accept(&mut self, variant: GameVariant, id: UserId) -> Option<bool> {
         self.remove_invite(variant, id).map(|i| match variant {
             Timed => {
                 if self.timed_game.is_some() {
