@@ -78,8 +78,8 @@ pub async fn worduel_accept_timed(
 /// On your side, of course.
 /// The game ends for you if you get an exact match
 /// or if you run out of guesses.
-#[poise::command(slash_command, category = "Worduel", ephemeral)]
-pub async fn worduel_send(
+#[poise::command(slash_command, category = "Worduel", rename = "wd_send", ephemeral)]
+pub async fn worduel_send_timed(
     ctx: Context<'_>,
     #[description = "Sent word"] word: String,
 ) -> Result<(), Error> {
@@ -168,8 +168,8 @@ pub async fn worduel_send(
 /// Can also be used to reject invitations.
 /// To make sure you don't accidentally forfeit,
 /// you have to specify the enemy's tag in the command invocation.
-#[poise::command(slash_command, category = "Worduel")]
-pub async fn worduel_forfeit(
+#[poise::command(slash_command, category = "Worduel", rename = "wd_forfeit", ephemeral)]
+pub async fn worduel_forfeit_timed(
     ctx: Context<'_>,
     #[description = "Enemy username"] user: Option<serenity::User>,
 ) -> Result<(), Error> {
@@ -222,7 +222,7 @@ pub async fn worduel_forfeit(
                 .field("Last game state", stateline, true)
                 .color((255, 204, 11))
                 .description(format!("```\n{}\n```", views))
-        })
+        }).ephemeral(false)
     })
     .await?;
     Ok(())
@@ -231,8 +231,8 @@ pub async fn worduel_forfeit(
 /// Show the letter usage in your current game.
 ///
 /// This is a display-only keyboard, you can't use it for input.
-#[poise::command(slash_command, category = "Worduel", ephemeral)]
-pub async fn worduel_keyboard(ctx: Context<'_>) -> Result<(), Error> {
+#[poise::command(slash_command, category = "Worduel", rename = "wd_kb", ephemeral)]
+pub async fn worduel_keyboard_timed(ctx: Context<'_>) -> Result<(), Error> {
     let own_id = ctx.author().id;
     let mut udlock = ctx.data().userdata.write().await;
     let mut mplock = ctx.data().mpgames.write().await;

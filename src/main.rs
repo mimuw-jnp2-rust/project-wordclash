@@ -54,8 +54,9 @@ async fn main() {
             commands::dict::testmatch(),
             commands::mpgame::worduel_challenge_timed(),
             commands::mpgame::worduel_accept_timed(),
-            commands::mpgame::worduel_send(),
-            commands::mpgame::worduel_forfeit(),
+            commands::mpgame::worduel_send_timed(),
+            commands::mpgame::worduel_forfeit_timed(),
+            commands::mpgame::worduel_keyboard_timed(),
             commands::misc::roll_dice(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
