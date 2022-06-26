@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MatchLetter {
     Null = 0,  // not present in word
     Close = 1, // present elsewhere
