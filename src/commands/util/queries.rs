@@ -53,6 +53,9 @@ pub fn unwrap_timedgame_id(userdata: Option<&mut UserData>) -> CmdResult<(&mut U
  */
 pub fn unwrap_turngame_id(userdata: Option<&mut UserData>, userid: serenity::UserId) -> CmdResult<(&mut UserData, game::GameId)> {
     userdata.and_then(|udata| {
-        udata.player.turn_games.get(&userid).map(|gid| (udata, *gid))
+        udata.player.turn_games
+            .get(&userid)
+            .map(|g| *g) // something about "move out of udata occurs here"
+            .map(|g| (udata, g))
     }).ok_or(CmdError::NoGame)
 }
