@@ -28,9 +28,9 @@ impl GameSide {
     }
 
     // Returns score fo turn-based game, assuming that the last guess is winning.
-    pub fn calculate_turn_score(&self, max_guesses: usize) -> u64 {
+    pub fn calculate_turn_score(&self, max_guesses: usize, word_length: usize) -> u64 {
         let base: f64 = (max_guesses - std::cmp::min(self.guesses.len(), max_guesses) + 1) as f64;
-        (base.powf(1.6) * 20.0) as u64
+        (base.powf(1.6) * (word_length as f64)/5.0 * 20.0) as u64
     }
 
     // Returns true if guess results in victory.

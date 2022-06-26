@@ -12,6 +12,7 @@ pub enum CmdError {
     WordNotFound(String),
     NoGame, // no game to operate on
     BadAccept, // cannot accept this game
+    ChallengedSelf, // tried to challenge self
     NoInvite, // no invite from this user
     SelfInGame, // you're in a game but shouldn't be
     TargetInGame, // opponent's in a game but shouldn't be
@@ -35,6 +36,7 @@ impl fmt::Display for CmdError {
             WordNotFound(s) => write!(f, "Word not found in dictionary: {}", s),
             NoGame => write!(f, "You are not in a game"),
             BadAccept => write!(f, "Cannot accept this game"),
+            ChallengedSelf => write!(f, "Cannot challenge yourself to a game"),
             NoInvite => write!(f, "No invite from this user"),
             SelfInGame => write!(f, "You're already in a game"),
             TargetInGame => write!(f, "Target is already in a game"),

@@ -65,15 +65,15 @@ impl PlayerData {
      */
     pub fn remove_invite(&mut self, variant: GameVariant, id: UserId) -> Option<Invite> {
         match variant {
-            Timed => self.timed_challenges,
-            TurnBased => self.turn_challenges,
+            Timed => &mut self.timed_challenges,
+            TurnBased => &mut self.turn_challenges,
         }.remove(&id)
     }
 
     // Returns None if no challenge from this user exists,
     // Some(false) if the challenge cannot be accepted,
     // Some(true) if it has been accepted.
-    pub fn accept(&self, variant: GameVariant, id: UserId) -> Option<bool> {
+    pub fn accept(&mut self, variant: GameVariant, id: UserId) -> Option<bool> {
         self.remove_invite(variant, id).map(|i| match variant {
             Timed => {
                 if self.timed_game.is_some() {
@@ -95,5 +95,17 @@ impl PlayerData {
     pub fn clean_invites(&mut self, before: time::SystemTime) {
         self.timed_challenges.retain(|_, v| v.expiry > before);
         self.turn_challenges.retain(|_, v| v.expiry > before);
+    }
+
+    /**
+     * Removes expired invites and runs `each` on every expired invite.
+     */
+    pub fn clean_invites_then<F: FnMut(&mut Invite)>(&mut self, before: time::SystemTime, each: &mut F) {
+        self.timed_challenges.retain(|_, v| v.expiry > before || {
+            each(v); true
+        });
+        self.turn_challenges.retain(|_, v| v.expiry > before || {
+            each(v); true
+        });
     }
 }
