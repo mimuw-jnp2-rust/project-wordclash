@@ -1,4 +1,5 @@
 pub mod dict;
 pub mod misc;
-pub mod mpgame;
+pub mod timedgame;
+pub mod turngame;
 pub mod util;

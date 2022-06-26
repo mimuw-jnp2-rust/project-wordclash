@@ -88,6 +88,24 @@ impl CtxData {
         Ok(game_id)
     }
     
+    pub async fn reject_invite(&self,
+        own_id: UserId, enemy_id: UserId, variant: GameVariant
+    ) -> CmdResult<()> {
+        let mut udlock = self.userdata.write().await;
+        let userdata = udlock.entry(own_id).or_default();
+
+        let game_id = userdata.player
+            .list(variant)
+            .get(&enemy_id)
+            .ok_or(CmdError::NoInvite)? // important point 1
+            .game;
+        let mut mplock = self.mpgames.write().await;
+
+        userdata.player.remove_invite(variant, enemy_id).ok_or(CmdError::NoInvite)?;
+        mplock.remove(&game_id);
+        Ok(())
+    }
+    
     // Perform a function on an active (caller-bound) timed game. 
     // Takes a function which has to take four parameters:
     // - userdata, game_id, gamedata: obvious
