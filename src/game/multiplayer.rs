@@ -263,6 +263,10 @@ impl GameMP {
         self.end.get(index).and_then(|e| *e)
     }
 
+    pub fn get_baseword(&self, index: usize) -> &str {
+        self.side[index].baseword.as_str()
+    }
+
     pub fn get_score(&self) -> &[u64; 2] {
         &self.score
     }

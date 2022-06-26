@@ -96,4 +96,16 @@ impl PlayerData {
         self.timed_challenges.retain(|_, v| v.expiry > before);
         self.turn_challenges.retain(|_, v| v.expiry > before);
     }
+
+    /**
+     * Removes expired invites and runs `each` on every expired invite.
+     */
+    pub fn clean_invites_then<F: FnMut(&mut Invite)>(&mut self, before: time::SystemTime, each: &mut F) {
+        self.timed_challenges.retain(|_, v| v.expiry > before || {
+            each(v); true
+        });
+        self.turn_challenges.retain(|_, v| v.expiry > before || {
+            each(v); true
+        });
+    }
 }

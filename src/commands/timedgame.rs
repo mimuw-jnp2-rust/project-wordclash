@@ -9,7 +9,7 @@ use super::util::*;
 /// Supplied word must be within reasonable length bounds
 /// and appear in the dictionary.
 #[poise::command(slash_command, category = "Worduel", rename = "wd_challenge", ephemeral)]
-pub async fn worduel_challenge_timed(
+pub async fn challenge(
     ctx: Context<'_>,
     #[description = "Challenged user"] user: serenity::User,
     #[description = "Challenge word"] word: String,
@@ -51,7 +51,7 @@ pub async fn worduel_challenge_timed(
 ///
 /// The word you specify will be what the inviter has to guess.
 #[poise::command(slash_command, category = "Worduel", rename = "wd_accept", ephemeral)]
-pub async fn worduel_accept_timed(
+pub async fn accept(
     ctx: Context<'_>,
     #[description = "Chosen challenger"] user: serenity::User,
     #[description = "Response word"] word: String,
@@ -65,7 +65,35 @@ pub async fn worduel_accept_timed(
     ctx.channel_id().send_message(&ctx.discord().http, |m| {
         m.content(
             serenity::MessageBuilder::new()
-                .push("Your challenge has been accepted by")
+                .push("Your challenge has been accepted by ")
+                .push(&ctx.author().name)
+                .push(", ")
+                .user(user.id)
+                .push("!")
+                .build()
+        )
+    })
+    .await?;
+    Ok(())
+}
+
+/// Reject a Worduel invite
+#[poise::command(slash_command, category = "Worduel", rename = "wd_reject", ephemeral)]
+pub async fn reject(
+    ctx: Context<'_>,
+    #[description = "Challenger being rejected"] user: serenity::User,
+) -> Result<(), Error> {
+    let game = ctx.data().reject_invite(ctx.author().id, user.id, GameVariant::Timed).await?;
+
+    ctx.say(match game {
+        None => "Rejected invite, game void",
+        Some(g) => format!("Rejected invite, word was: {}", g.get_baseword(1))
+    }).await?;
+
+    ctx.channel_id().send_message(&ctx.discord().http, |m| {
+        m.content(
+            serenity::MessageBuilder::new()
+                .push("Your challenge has been accepted by ")
                 .push(&ctx.author().name)
                 .push(", ")
                 .user(user.id)
@@ -83,7 +111,7 @@ pub async fn worduel_accept_timed(
 /// The game ends for you if you get an exact match
 /// or if you run out of guesses.
 #[poise::command(slash_command, category = "Worduel", rename = "wd_send", ephemeral)]
-pub async fn worduel_send_timed(
+pub async fn send(
     ctx: Context<'_>,
     #[description = "Sent word"] word: String,
 ) -> Result<(), Error> {
@@ -156,7 +184,7 @@ pub async fn worduel_send_timed(
 /// To make sure you don't accidentally forfeit,
 /// you have to specify the enemy's tag in the command invocation.
 #[poise::command(slash_command, category = "Worduel", rename = "wd_forfeit", ephemeral)]
-pub async fn worduel_forfeit_timed(
+pub async fn forfeit(
     ctx: Context<'_>,
     #[description = "Enemy username"] user: Option<serenity::User>,
 ) -> Result<(), Error> {
@@ -178,7 +206,8 @@ pub async fn worduel_forfeit_timed(
         match gamedata.get_progress() {
             Waiting => content
                 .user(enemy_id)
-                .push(", your invitation has been rejected."),
+                .push(", the game has been given up on by ")
+                .push(&ctx.author().name),
             _ => content
                 .user(enemy_id)
                 .push(", your opponent has forfeited this game."),
@@ -199,24 +228,17 @@ pub async fn worduel_forfeit_timed(
     Ok(())
 }
 
-/// Show the letter usage in your current game.
+/// Show the letter usage in your current timed game.
 ///
 /// This is a display-only keyboard, you can't use it for input.
 #[poise::command(slash_command, category = "Worduel", rename = "wd_kb", ephemeral)]
-pub async fn worduel_keyboard_timed(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn keyboard(ctx: Context<'_>) -> Result<(), Error> {
     let own_id = ctx.author().id;
-    let mut udlock = ctx.data().userdata.write().await;
-    let mut mplock = ctx.data().mpgames.write().await;
 
-    let (userdata, game_id) = queries::unwrap_timedgame_id(udlock.get_mut(&own_id))?;
-
-    let gamedata = mplock.get_mut(&game_id).ok_or_else(|| {
-        userdata.player.timed_game = None;
-        CmdError::GameDeleted
-    })?;
-    let player_index = gamedata.match_user(own_id).unwrap();
-
-    let keyboard = gamedata.render_keyboard(player_index);
+    let keyboard = ctx.data().act_on_timed(own_id, |_, _, gamedata, _| {
+        let player_index = gamedata.match_user(own_id).unwrap();
+        Ok(gamedata.render_keyboard(player_index))
+    }).await?;
 
     ctx.send(|m| m.content(keyboard)).await?;
     Ok(())
