@@ -20,8 +20,8 @@ impl ScoreManager {
         // Complexity's pretty weak, but it works
         let mut res = guard.iter().map(|(k, v)| (*k, *v))
             .collect::<Vec<_>>();
-        res.sort();
-        res[0..count].into()
+        res.sort_by_key(|(_, score)| *score);
+        res.iter().take(count).copied().collect()
     }
 
     pub async fn add(&self, player: UserId, score: u64) {
