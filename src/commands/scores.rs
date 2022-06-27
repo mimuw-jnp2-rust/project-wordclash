@@ -4,8 +4,8 @@ use poise::serenity_prelude as serenity;
 
 /// List up to top n scores in the leaderboard
 /// n maximum 50, minimum 1, default 10.
-#[poise::command(slash_command, category = "Worduel", rename = "wd_challenge", ephemeral)]
-pub async fn challenge(
+#[poise::command(slash_command, category = "Worduel", rename = "wd_top", ephemeral)]
+pub async fn leaderboard(
     ctx: Context<'_>,
     #[description = "Result size"] count: Option<usize>,
 ) -> Result<(), Error> {
@@ -21,6 +21,9 @@ pub async fn challenge(
         result.push(i).push(". ");
         result.user(user);
         result.push(": ").push(score).push(" pts\n");
+    }
+    if scores.len() == 0 {
+        result.push("No one has won a game yet");
     }
     ctx.say(result.build()).await?;
     Ok(())
