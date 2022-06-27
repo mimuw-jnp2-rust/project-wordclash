@@ -109,7 +109,7 @@ impl CtxData {
     // Takes a function which has to take four parameters:
     // - userdata, game_id, gamedata: obvious
     // - remove: function to call if the game is to be removed
-    pub async fn act_on_timed<T, F: FnOnce(&mut UserData, GameId, &mut GameMP, &mut dyn FnMut())-> CmdResult<T>> (&self,
+    pub async fn act_on_timed<T, F: FnOnce(&mut UserData, GameId, &mut GameMP, &mut dyn FnMut(bool))-> CmdResult<T>> (&self,
         own_id: UserId, f: F
     ) -> CmdResult<T> {
         let mut udlock = self.userdata.write().await;
@@ -127,7 +127,14 @@ impl CtxData {
         let enemy_id = gamedata.get_user_id(1 - player_index);
 
         let mut should_remove = false;
-        let res = f(userdata, game_id, gamedata, &mut || {should_remove = true;});
+        let mut should_commit_scores = false;
+        let res = f(userdata, game_id, gamedata, &mut |scores| {
+            should_remove = true;
+            should_commit_scores = scores;
+        });
+        if should_commit_scores {
+            self.scores().add_from_game(gamedata).await;
+        }
         if should_remove {
             mplock.remove(&game_id);
             userdata.player.timed_game = None;
@@ -142,7 +149,8 @@ impl CtxData {
     // Takes a function which has to take four parameters:
     // - userdata, game_id, gamedata: obvious
     // - remove: function to call if the game is to be removed
-    pub async fn act_on_turnbased<T, F: FnOnce(&mut UserData, GameId, &mut GameMP, &mut dyn FnMut())-> CmdResult<T>> (&self,
+    //     Takes a bool indicating whether or not to commit the score.
+    pub async fn act_on_turnbased<T, F: FnOnce(&mut UserData, GameId, &mut GameMP, &mut dyn FnMut(bool))-> CmdResult<T>> (&self,
         own_id: UserId, enemy_id: UserId, f: F
     ) -> CmdResult<T> {
         let mut udlock = self.userdata.write().await;
@@ -156,7 +164,14 @@ impl CtxData {
         })?;
 
         let mut should_remove = false;
-        let res = f(userdata, game_id, gamedata, &mut || {should_remove = true;});
+        let mut should_commit_scores = false;
+        let res = f(userdata, game_id, gamedata, &mut |scores| {
+            should_remove = true;
+            should_commit_scores = scores;
+        });
+        if should_commit_scores {
+            self.scores().add_from_game(gamedata).await;
+        }
         if should_remove {
             mplock.remove(&game_id);
             userdata.player.turn_games.remove(&enemy_id);

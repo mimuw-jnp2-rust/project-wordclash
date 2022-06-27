@@ -137,7 +137,7 @@ pub async fn send(
             let mut content = serenity::MessageBuilder::new();
             match progress {
                 Over(res) => {
-                    remove();
+                    remove(true);
                     match res {
                         Some(i) => content
                             .push("Game over, ")
@@ -211,7 +211,7 @@ pub async fn forfeit(
                 .user(enemy_id)
                 .push(", your opponent has forfeited this game."),
         };
-        remove();
+        remove(false);
         Ok((gamedata.render_stateline(false), content.build(), views))
     }).await?;
 

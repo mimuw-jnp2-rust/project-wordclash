@@ -26,12 +26,15 @@ impl Default for UserData {
     }
 }
 
+pub mod scores;
+
 pub struct CtxData {
     pub dict: dict::Dictionary, // immutable
     pub mpgames: TokioRwLock<HashMap<game::GameId, game::GameMP>>,
     pub userdata: TokioRwLock<HashMap<UserId, UserData>>,
     // Used internally. Generates sequential IDs.
     gameid_gen: game::AtomicGameId,
+    scores: scores::ScoreManager,
 }
 
 impl CtxData {
@@ -41,10 +44,15 @@ impl CtxData {
             mpgames: TokioRwLock::new(HashMap::new()),
             userdata: TokioRwLock::new(HashMap::new()),
             gameid_gen: game::AtomicGameId::new(0),
+            scores: scores::ScoreManager::new(),
         }
     }
     
     pub fn pull_gameid(&self) -> game::GameId {
         self.gameid_gen.fetch_add(1, atomic::Ordering::Relaxed)
+    }
+
+    pub fn scores(&self) -> &scores::ScoreManager {
+        &self.scores
     }
 }
