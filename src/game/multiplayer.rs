@@ -293,6 +293,13 @@ impl GameMP {
     pub fn get_start(&self) -> Instant {
         self.start
     }
+    
+    pub fn is_expiring(&self) -> bool {
+        if matches!(self.variant, GameVariant::TurnBased) {
+            return false;
+        }
+        self.get_start() + crate::constants::TIMED_GAME_EXPIRY <= Instant::now()
+    }
 
     pub fn get_end(&self, index: usize) -> Option<Instant> {
         self.end.get(index).and_then(|e| *e)

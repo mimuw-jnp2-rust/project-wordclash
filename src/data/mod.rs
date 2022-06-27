@@ -8,12 +8,14 @@ use crate::dict;
 
 pub struct UserData {
     pub player: game::PlayerData,
+    pub score: u64,
 }
 
 impl UserData {
     pub fn new() -> UserData {
         UserData {
             player: game::PlayerData::new(),
+            score: 0,
         }
     }
 }

@@ -2,6 +2,7 @@ use poise::serenity_prelude as serenity;
 pub use data::*;
 
 use std::env;
+use std::sync::Arc;
 
 mod commands;
 mod constants;
@@ -11,7 +12,7 @@ mod data;
 // use serde::{Deserialize, Serialize};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Context<'a> = poise::Context<'a, CtxData, Error>;
+pub type Context<'a> = poise::Context<'a, Arc<CtxData>, Error>;
 
 const TOKEN_VARNAME: &str = "DISCORD_TOKEN";
 
@@ -72,13 +73,13 @@ async fn main() {
         ..Default::default()
     };
 
+    let ctxdata = Arc::new(CtxData::new(dict::load_dictionary()));
+    let fwdata = ctxdata.clone();
     let framework = poise::Framework::build()
         .token(env::var(TOKEN_VARNAME).expect(&token_errstr))
         .user_data_setup(move |_ctx, _ready, _fw| {
             Box::pin(async move {
-                Ok(CtxData::new(
-                    dict::load_dictionary(),
-                ))
+                Ok(fwdata)
             })
         })
         .options(options)
@@ -86,5 +87,22 @@ async fn main() {
             serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
         );
 
+    tokio::task::spawn(async move {
+        let mut cleanup_timer = tokio::time::interval(constants::CLEANUP_INTERVAL);
+        loop {
+            use std::time::SystemTime;
+            cleanup_timer.tick().await;
+            let mut mplock = ctxdata.mpgames.write().await;
+            { // Separate scope to hold udlock for less time
+                let mut udlock = ctxdata.userdata.write().await;
+                for v in udlock.values_mut() {
+                    v.player.clean_invites_then(SystemTime::now(), |invite| {
+                        mplock.remove(&invite.game);
+                    });
+                };
+            }
+            mplock.retain(|_, g| !g.is_expiring());
+        }
+    });
     framework.run().await.unwrap();
 }
