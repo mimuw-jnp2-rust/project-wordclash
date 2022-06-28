@@ -97,6 +97,9 @@ impl GameMP {
         // Second count based on spans, used as input for score calculation
         let mut secscores = spans.map(|s| (*max_end - s + near_second).as_secs());
 
+        // Maximum of used guesses
+        let top_guesses = self.side.iter().map(|s| s.guesses.len()).max().unwrap();
+
         // Cache victory result
         let victory: Vec<_> = self.side.iter().map(|s| s.victorious()).collect();
         if !victory.iter().all(|x| *x) {
@@ -109,7 +112,11 @@ impl GameMP {
             } else {
                 self.score[i] = match self.variant {
                     GameVariant::Timed => self.side[i].calculate_timed_score(secscores[i], self.max_guesses),
-                    GameVariant::TurnBased => self.side[i].calculate_turn_score(self.max_guesses, self.get_word_length()),
+                    GameVariant::TurnBased => self.side[i].calculate_turn_score(
+                        self.max_guesses,
+                        top_guesses - self.side[i].guesses.len(),
+                        self.get_word_length(),
+                    ),
                 };
             }
         }
@@ -379,7 +386,7 @@ mod test {
         println!("Scores: {}, {}", score[0], score[1]);
         // Subject to change with changes in score calculation.
         // Comment out and edit the following line at will.
-        assert_eq!(score, [21, 5]);
+        assert_eq!(score, [13, 3]);
     }
 
     #[test]
