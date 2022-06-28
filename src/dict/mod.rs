@@ -14,7 +14,7 @@ pub struct Dictionary {
 }
 
 impl Dictionary {
-    fn new(src: DictSet) -> Dictionary {
+    pub fn new(src: DictSet) -> Dictionary {
         let mut lengthmap: HashMap<usize, Vec<String>> = HashMap::new();
         for s in src.into_iter() {
             lengthmap.entry(s.len()).or_default().push(s);

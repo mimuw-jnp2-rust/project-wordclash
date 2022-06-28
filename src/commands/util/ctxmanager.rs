@@ -182,3 +182,64 @@ impl CtxData {
         res
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::dict;
+    use crate::commands::util::CmdError;
+    use dict::{Dictionary, DictSet};
+    use GameVariant::*;
+    use multiplayer::GameProgress::*;
+    
+    fn get_dict() -> Dictionary {
+        let micro_dictset =
+            ["rover", "tower", "ready", "tears", "river", "smile", "quick", "slate", "sheet", "rails"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<DictSet>();
+        Dictionary::new(micro_dictset)
+    }
+
+    #[tokio::test]
+    async fn test_full_game() {
+        let u1 = UserId::from(44210404);
+        let u2 = UserId::from(44210405);
+        let u3 = UserId::from(44210406);
+        let ctx = CtxData::new(get_dict());
+        assert!(ctx.accept_invite(u2, u1, "tower".to_string(), TurnBased).await.is_err());
+        assert!(ctx.challenge_player(u1, u2, "rails".to_string(), TurnBased).await.is_ok());
+        assert!(ctx.accept_invite(u2, u1, "tower".to_string(), TurnBased).await.is_ok());
+        
+        assert!(matches!(ctx.act_on_turnbased(u3, u2, |_, _, _, _| Ok(())).await,
+            Err(CmdError::NoGame)));
+        
+        for w in ["slate", "sheet", "tears", "tower"] {
+            assert!(ctx.act_on_turnbased(u1, u2, |_, _, g, _| {
+                assert!(matches!(g.get_progress(), Started));
+                g.send_guess(0, w.to_string());
+                Ok(())
+            }).await.is_ok());
+        }
+        for w in ["river", "ready", "rails"] {
+            assert!(ctx.act_on_turnbased(u2, u1, |_, _, g, r| {
+                assert!(matches!(g.get_progress(), Ending(0)));
+                g.send_guess(1, w.to_string());
+                match g.get_progress() {
+                    Ending(_) => {},
+                    Over(Some(_)) => {r(true);},
+                    _ => {assert!(false);},
+                }
+                Ok(())
+            }).await.is_ok());
+        }
+        assert!(matches!(ctx.act_on_turnbased(u2, u1, |_, _, g, _| {
+            println!("{:?}", g.get_progress());
+            Ok(())
+        }).await, Err(CmdError::NoGame)));
+        let scores = ctx.scores().list_top(10).await;
+        assert!(scores.len() == 2);
+        assert!(scores[0].0 == u2);
+        assert!(scores[1].0 == u1);
+    }
+}
