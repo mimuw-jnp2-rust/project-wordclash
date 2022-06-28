@@ -18,7 +18,7 @@ pub async fn leaderboard(
     let mut result = serenity::MessageBuilder::new();
     for i in 0..scores.len() {
         let (user, score) = &scores[i];
-        result.push(i).push(". ");
+        result.push(i+1).push(". ");
         result.user(user);
         result.push(": ").push(score).push(" pts\n");
     }
