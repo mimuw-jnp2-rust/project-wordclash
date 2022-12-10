@@ -1,0 +1,5 @@
+# Cargo compilation directory
+/target
+
+# Secret files
+**/secret:*
